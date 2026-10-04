@@ -4,6 +4,7 @@ import { ArrowRight, Check, ScanLine } from 'lucide-react-native';
 import { NfcMark } from '../components/NfcMark';
 import { SoftAmbient } from '../components/SoftAmbient';
 import { GhostLink, KeepsakeButton } from '../components/ui';
+import { NATIVE_DRIVER } from '../lib/motion';
 import { colors } from '../theme';
 import type { ScanPhase } from '../types';
 
@@ -14,61 +15,76 @@ type Props = {
 };
 
 export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
-  const breathe = useRef(new Animated.Value(0)).current;
+  const tagScale = useRef(new Animated.Value(1)).current;
   const spin = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(0)).current;
+  const breatheRef = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(breathe, { toValue: 1, duration: 1500, useNativeDriver: true }),
-        Animated.timing(breathe, { toValue: 0, duration: 1500, useNativeDriver: true }),
-      ]),
-    );
-    if (phase === 'listening') loop.start();
-    else {
-      loop.stop();
-      breathe.setValue(0);
+    breatheRef.current?.stop();
+    breatheRef.current = null;
+
+    if (phase === 'listening') {
+      tagScale.setValue(1);
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(tagScale, {
+            toValue: 1.04,
+            duration: 1600,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: NATIVE_DRIVER,
+          }),
+          Animated.timing(tagScale, {
+            toValue: 1,
+            duration: 1600,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: NATIVE_DRIVER,
+          }),
+        ]),
+      );
+      breatheRef.current = loop;
+      loop.start();
+      return () => loop.stop();
     }
-    return () => loop.stop();
-  }, [breathe, phase]);
 
-  useEffect(() => {
-    let spinLoop: Animated.CompositeAnimation | undefined;
-    let pulseAnim: Animated.CompositeAnimation | undefined;
     if (phase === 'detecting') {
       spin.setValue(0);
-      spinLoop = Animated.timing(spin, {
-        toValue: 1,
-        duration: 1500,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      });
-      pulseAnim = Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 180, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 220, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 180, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 220, useNativeDriver: true }),
-      ]);
-      spinLoop.start();
-      pulseAnim.start();
-    } else {
-      spin.setValue(0);
-      pulse.setValue(0);
+      tagScale.setValue(1);
+      Animated.parallel([
+        Animated.timing(spin, {
+          toValue: 1,
+          duration: 1400,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: NATIVE_DRIVER,
+        }),
+        Animated.sequence([
+          Animated.timing(tagScale, {
+            toValue: 0.94,
+            duration: 200,
+            useNativeDriver: NATIVE_DRIVER,
+          }),
+          Animated.timing(tagScale, {
+            toValue: 1,
+            duration: 240,
+            useNativeDriver: NATIVE_DRIVER,
+          }),
+        ]),
+      ]).start();
+      return;
     }
-    return () => {
-      spinLoop?.stop();
-      pulseAnim?.stop();
-    };
-  }, [phase, pulse, spin]);
 
-  const tagScale = breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] });
-  const detectScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.92] });
+    // found
+    Animated.spring(tagScale, {
+      toValue: 1.06,
+      friction: 7,
+      tension: 80,
+      useNativeDriver: NATIVE_DRIVER,
+    }).start();
+  }, [phase, spin, tagScale]);
+
   const rotate = spin.interpolate({
     inputRange: [0, 1],
-    outputRange: ['-120deg', '520deg'],
+    outputRange: ['0deg', '360deg'],
   });
-  const orbitScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.02] });
 
   const title =
     phase === 'found' ? 'Note found.' : phase === 'detecting' ? 'Reading the tag…' : 'Hold a tag\nto your phone.';
@@ -81,37 +97,23 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
   const cta =
     phase === 'found' ? 'Tag found' : phase === 'detecting' ? 'Reading tag…' : 'Use demo tag';
 
-  const liveScale = phase === 'detecting' ? detectScale : phase === 'listening' ? tagScale : 1.06;
-
   return (
     <View style={styles.body}>
       <SoftAmbient />
       <View style={styles.main}>
         <View style={styles.stage}>
-          <Animated.View
+          <View
             style={[
               styles.orbit,
               styles.orbitOuter,
-              phase === 'detecting' && { transform: [{ scale: orbitScale }], borderColor: colors.ink },
-              phase === 'found' && { borderColor: colors.ink },
+              (phase === 'detecting' || phase === 'found') && styles.orbitActive,
             ]}
           />
-          <Animated.View
-            style={[
-              styles.orbit,
-              styles.orbitInner,
-              phase === 'detecting' && { transform: [{ scale: orbitScale }], borderColor: colors.ink },
-            ]}
-          />
+          <View style={[styles.orbit, styles.orbitInner]} />
           {phase === 'detecting' ? (
             <Animated.View style={[styles.trace, { transform: [{ rotate }] }]} />
           ) : null}
-          <Animated.View
-            style={[
-              styles.tag,
-              { transform: [{ rotate: '-6deg' }, { scale: liveScale }] },
-            ]}
-          >
+          <Animated.View style={[styles.tag, { transform: [{ rotate: '-6deg' }, { scale: tagScale }] }]}>
             <NfcMark size={34} />
             {phase === 'found' ? (
               <View style={styles.success}>
@@ -166,6 +168,7 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderColor: colors.butterDeep,
   },
+  orbitActive: { borderColor: colors.ink },
   trace: {
     position: 'absolute',
     width: '98%',

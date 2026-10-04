@@ -3,6 +3,7 @@ import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ArrowLeft, Plus } from 'lucide-react-native';
 import { SoftAmbient } from '../components/SoftAmbient';
 import { KeepsakeButton, QuietButton } from '../components/ui';
+import { NATIVE_DRIVER } from '../lib/motion';
 import { colors } from '../theme';
 import type { Note } from '../types';
 
@@ -16,12 +17,13 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
   const letter = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    letter.setValue(0);
     Animated.timing(letter, {
       toValue: 1,
-      duration: 850,
-      useNativeDriver: true,
+      duration: 520,
+      useNativeDriver: NATIVE_DRIVER,
     }).start();
-  }, [letter]);
+  }, [letter, note.recipient, note.message]);
 
   return (
     <View style={styles.body}>
@@ -36,7 +38,10 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
               opacity: letter,
               transform: [
                 {
-                  translateY: letter.interpolate({ inputRange: [0, 1], outputRange: [28, 0] }),
+                  translateY: letter.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [16, 0],
+                  }),
                 },
               ],
             },

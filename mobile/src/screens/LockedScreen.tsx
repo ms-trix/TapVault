@@ -3,6 +3,7 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import { ArrowRight } from 'lucide-react-native';
 import { NfcMark } from '../components/NfcMark';
 import { GhostLink, KeepsakeButton } from '../components/ui';
+import { NATIVE_DRIVER } from '../lib/motion';
 import { colors } from '../theme';
 import type { Note } from '../types';
 
@@ -14,67 +15,61 @@ type Props = {
 };
 
 export function LockedScreen({ note, opening, onOpen, onBack }: Props) {
-  const enter = useRef(new Animated.Value(0)).current;
-  const leave = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const emblemScale = useRef(new Animated.Value(0.92)).current;
 
   useEffect(() => {
-    Animated.timing(enter, {
-      toValue: 1,
-      duration: 700,
-      useNativeDriver: true,
-    }).start();
-  }, [enter]);
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 420,
+        useNativeDriver: NATIVE_DRIVER,
+      }),
+      Animated.spring(emblemScale, {
+        toValue: 1,
+        friction: 8,
+        tension: 70,
+        useNativeDriver: NATIVE_DRIVER,
+      }),
+    ]).start();
+  }, [emblemScale, opacity]);
 
   useEffect(() => {
     if (!opening) return;
-    Animated.timing(leave, {
-      toValue: 0,
-      duration: 450,
-      useNativeDriver: true,
-    }).start();
-  }, [leave, opening]);
-
-  const emblemStyle = {
-    opacity: Animated.multiply(enter, leave),
-    transform: [
-      {
-        scale: enter.interpolate({ inputRange: [0, 1], outputRange: [0.84, opening ? 1.12 : 1] }),
-      },
-      {
-        rotate: enter.interpolate({
-          inputRange: [0, 1],
-          outputRange: ['-8deg', '-5deg'],
-        }),
-      },
-    ],
-  };
-
-  const fadeCopy = {
-    opacity: leave,
-    transform: [
-      {
-        translateY: leave.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }),
-      },
-    ],
-  };
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 380,
+        useNativeDriver: NATIVE_DRIVER,
+      }),
+      Animated.timing(emblemScale, {
+        toValue: 1.08,
+        duration: 380,
+        useNativeDriver: NATIVE_DRIVER,
+      }),
+    ]).start();
+  }, [emblemScale, opening, opacity]);
 
   return (
     <View style={styles.body}>
-      <View style={styles.main}>
-        <Animated.View style={[styles.meta, fadeCopy]}>
+      <Animated.View style={[styles.main, { opacity }]}>
+        <View style={styles.meta}>
           <Text style={styles.metaText}>
             For {note.recipient} · From {note.from}
           </Text>
-        </Animated.View>
-        <Animated.View style={[styles.emblem, emblemStyle]}>
+        </View>
+        <Animated.View
+          style={[
+            styles.emblem,
+            { transform: [{ rotate: '-5deg' }, { scale: emblemScale }] },
+          ]}
+        >
           <NfcMark size={54} />
         </Animated.View>
-        <Animated.Text style={[styles.title, fadeCopy]}>Still sealed.</Animated.Text>
-        <Animated.Text style={[styles.teaser, fadeCopy]}>
-          A few words are waiting here, just for {note.recipient}.
-        </Animated.Text>
-      </View>
-      <Animated.View style={[styles.footer, fadeCopy]}>
+        <Text style={styles.title}>Still sealed.</Text>
+        <Text style={styles.teaser}>A few words are waiting here, just for {note.recipient}.</Text>
+      </Animated.View>
+      <Animated.View style={[styles.footer, { opacity }]}>
         <View style={styles.readyRow}>
           <Text style={styles.readyStrong}>Ready to open</Text>
           <Text style={styles.readyMute}>For {note.recipient}</Text>
