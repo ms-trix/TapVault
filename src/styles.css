@@ -178,6 +178,35 @@
 .field input::placeholder, .field textarea::placeholder { color: var(--muted-foreground); opacity: .7; }
 .form-bottom { margin-top: auto; }
 .form-hint { color: var(--muted-foreground); font-size: 11px; line-height: 1.5; margin: 0 0 14px; }
+.seal-screen { overflow-y: auto; }
+.voice-block { display: flex; flex-direction: column; gap: 8px; }
+.voice-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--card); border: 1px solid var(--soft-line); border-radius: 2px; padding: 12px;
+}
+.voice-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.voice-mic {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--butter);
+  border: 1px solid var(--soft-line); display: grid; place-items: center; flex-shrink: 0;
+}
+.voice-mic svg { width: 16px; height: 16px; }
+.voice-title { font-size: 13px; font-weight: 600; }
+.voice-meta { font-size: 11px; color: var(--muted-foreground); margin-top: 2px; }
+.voice-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.voice-text-btn { height: 32px; padding: 0 8px; font-size: 12px; color: var(--muted-foreground); }
+.voice-record-btn { min-height: 36px; height: 36px; padding: 0 12px; font-size: 12px; }
+.voice-record-btn svg { width: 14px; height: 14px; }
+.voice-error { margin: 0; font-size: 11px; color: var(--destructive); line-height: 1.4; }
+.letter-voice {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--soft-line);
+}
+.voice-play-btn {
+  width: 42px; min-height: 42px; height: 42px; padding: 0; border-radius: 50%;
+  display: grid; place-items: center;
+}
+.voice-play-btn svg, .play-triangle { width: 14px; height: 14px; line-height: 1; }
+.letter-voice-copy { min-width: 0; }
 .locked-main { flex: 1; display: flex; flex-direction: column; text-align: center; align-items: center; justify-content: center; padding: 18px 0; }
 .meta-line { color: var(--muted-foreground); font-size: 12px; font-weight: 600; border: 1px solid var(--soft-line); border-radius: 100px; padding: 8px 15px; max-width: 100%; overflow-wrap: anywhere; }
 .locked-emblem { width: 104px; height: 104px; display: grid; place-items: center; border: 1px solid var(--soft-line); background: var(--butter); border-radius: 16px; margin: 58px auto 48px; transform: rotate(-5deg); }

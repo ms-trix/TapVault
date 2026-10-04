@@ -1,11 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, Plus, ScanLine } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Mic, Plus, ScanLine, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { playClick, playUnlock } from "@/lib/sfx";
 
 type Screen = "scan" | "seal" | "locked" | "reveal";
 type ScanPhase = "listening" | "detecting" | "found";
-type Note = { recipient: string; message: string; from: string };
+type Note = {
+  recipient: string;
+  message: string;
+  from: string;
+  voiceDataUrl?: string;
+  voiceDurationSec?: number;
+};
 
 /** Keep these aligned with CSS animation durations in styles.css */
 const TIMING = {
@@ -13,6 +20,9 @@ const TIMING = {
   foundHoldMs: 1300,
   unlockMs: 920,
 } as const;
+
+const STORAGE_KEY = "tapvault-keepsake";
+const MAX_VOICE_SEC = 30;
 
 const demoNote: Note = {
   recipient: "Mom",
@@ -60,6 +70,33 @@ function stepLabel(screen: Screen, scanPhase: ScanPhase) {
   return "A moment to keep";
 }
 
+function formatDuration(sec: number) {
+  const whole = Math.max(0, Math.floor(sec));
+  const m = Math.floor(whole / 60);
+  const s = whole % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function readStoredNote(): Note | null {
+  try {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (!saved) return null;
+    const parsed = JSON.parse(saved) as Note;
+    if (parsed.recipient && parsed.message && parsed.from) return parsed;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function writeStoredNote(note: Note) {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(note));
+  } catch {
+    /* Storage full / private mode — demo still works in memory. */
+  }
+}
+
 function Index() {
   const [screen, setScreen] = useState<Screen>("scan");
   const [note, setNote] = useState<Note>(demoNote);
@@ -69,22 +106,36 @@ function Index() {
   const [scanPhase, setScanPhase] = useState<ScanPhase>("listening");
   const [opening, setOpening] = useState(false);
   const [revealFromUnlock, setRevealFromUnlock] = useState(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [draftVoiceUrl, setDraftVoiceUrl] = useState<string | undefined>();
+  const [draftVoiceSec, setDraftVoiceSec] = useState<number | undefined>();
+  const [recording, setRecording] = useState(false);
+  const [recordSec, setRecordSec] = useState(0);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [playingVoice, setPlayingVoice] = useState(false);
 
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const mediaStream = useRef<MediaStream | null>(null);
+  const chunks = useRef<Blob[]>([]);
+  const recordStartedAt = useRef(0);
+  const recordTick = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem("tapvault-keepsake");
-      if (saved) {
-        const parsed = JSON.parse(saved) as Note;
-        if (parsed.recipient && parsed.message && parsed.from) {
-          setNote(parsed);
-        }
-      }
-    } catch {
-      /* The demo works without storage. */
+    // Pre-seed: ensure a known demo note exists so cold-start pitch never opens empty.
+    const existing = readStoredNote();
+    if (existing) {
+      setNote(existing);
+    } else {
+      writeStoredNote(demoNote);
+      setNote(demoNote);
     }
+    return () => {
+      timers.current.forEach(clearTimeout);
+      stopRecordingCleanup();
+      audioRef.current?.pause();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const clearTimers = () => {
@@ -92,38 +143,60 @@ function Index() {
     timers.current = [];
   };
 
+  const stopRecordingCleanup = () => {
+    if (recordTick.current) {
+      clearInterval(recordTick.current);
+      recordTick.current = null;
+    }
+    mediaRecorder.current?.stop();
+    mediaRecorder.current = null;
+    mediaStream.current?.getTracks().forEach((track) => track.stop());
+    mediaStream.current = null;
+    setRecording(false);
+  };
+
   const moveTo = (next: Screen, options?: { fromUnlock?: boolean }) => {
     clearTimers();
     if (next === "scan") setScanPhase("listening");
+    if (next === "seal") {
+      setVoiceError(null);
+    }
     setOpening(false);
     setRevealFromUnlock(Boolean(options?.fromUnlock));
+    setPlayingVoice(false);
+    audioRef.current?.pause();
     setScreen(next);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
   const sealNote = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const newNote = {
+    const newNote: Note = {
       recipient: recipient.trim(),
       message: message.trim(),
       from: from.trim(),
+      voiceDataUrl: draftVoiceUrl,
+      voiceDurationSec: draftVoiceSec,
     };
     if (!newNote.recipient || !newNote.message || !newNote.from) return;
     setNote(newNote);
-    try {
-      window.localStorage.setItem("tapvault-keepsake", JSON.stringify(newNote));
-    } catch {
-      /* Continue without storage. */
-    }
+    writeStoredNote(newNote);
+    void playClick();
     moveTo("locked");
   };
 
   const useDemo = () => {
     if (scanPhase !== "listening") return;
     setScanPhase("detecting");
+    // Always use the pre-seeded demo note for the pitch path (reliable every time).
     setNote(demoNote);
+    writeStoredNote(demoNote);
+    void playClick();
     timers.current.push(
-      setTimeout(() => setScanPhase("found"), TIMING.detectMs),
+      setTimeout(() => {
+        setScanPhase("found");
+        void playClick();
+      }, TIMING.detectMs),
       setTimeout(() => moveTo("locked"), TIMING.detectMs + TIMING.foundHoldMs),
     );
   };
@@ -131,9 +204,93 @@ function Index() {
   const openNote = () => {
     if (opening) return;
     setOpening(true);
-    timers.current.push(
-      setTimeout(() => moveTo("reveal", { fromUnlock: true }), TIMING.unlockMs),
-    );
+    void playUnlock();
+    timers.current.push(setTimeout(() => moveTo("reveal", { fromUnlock: true }), TIMING.unlockMs));
+  };
+
+  const startRecording = async () => {
+    setVoiceError(null);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setVoiceError("Voice notes need mic access in this browser.");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStream.current = stream;
+      chunks.current = [];
+      const recorder = new MediaRecorder(stream);
+      mediaRecorder.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunks.current.push(event.data);
+      };
+      recorder.onstop = () => {
+        const blob = new Blob(chunks.current, { type: recorder.mimeType || "audio/webm" });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const url = typeof reader.result === "string" ? reader.result : undefined;
+          const elapsed = Math.min(MAX_VOICE_SEC, (Date.now() - recordStartedAt.current) / 1000);
+          setDraftVoiceUrl(url);
+          setDraftVoiceSec(Number(elapsed.toFixed(1)));
+        };
+        reader.readAsDataURL(blob);
+        stream.getTracks().forEach((track) => track.stop());
+        mediaStream.current = null;
+      };
+      recordStartedAt.current = Date.now();
+      setRecordSec(0);
+      setRecording(true);
+      recorder.start();
+      recordTick.current = setInterval(() => {
+        const elapsed = (Date.now() - recordStartedAt.current) / 1000;
+        setRecordSec(elapsed);
+        if (elapsed >= MAX_VOICE_SEC) {
+          stopRecording();
+        }
+      }, 200);
+    } catch {
+      setVoiceError("Couldn’t reach the microphone. Check permissions and try again.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (recordTick.current) {
+      clearInterval(recordTick.current);
+      recordTick.current = null;
+    }
+    if (mediaRecorder.current && mediaRecorder.current.state !== "inactive") {
+      mediaRecorder.current.stop();
+    }
+    mediaRecorder.current = null;
+    setRecording(false);
+  };
+
+  const clearVoice = () => {
+    stopRecordingCleanup();
+    setDraftVoiceUrl(undefined);
+    setDraftVoiceSec(undefined);
+    setRecordSec(0);
+    setVoiceError(null);
+  };
+
+  const togglePlayVoice = async () => {
+    if (!note.voiceDataUrl) return;
+    if (!audioRef.current) {
+      audioRef.current = new Audio(note.voiceDataUrl);
+      audioRef.current.onended = () => setPlayingVoice(false);
+    }
+    if (playingVoice) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setPlayingVoice(false);
+      return;
+    }
+    audioRef.current.src = note.voiceDataUrl;
+    try {
+      await audioRef.current.play();
+      setPlayingVoice(true);
+    } catch {
+      setPlayingVoice(false);
+    }
   };
 
   return (
@@ -231,7 +388,7 @@ function Index() {
           )}
 
           {screen === "seal" && (
-            <form className="experience-body screen-enter" key="seal" onSubmit={sealNote}>
+            <form className="experience-body screen-enter seal-screen" key="seal" onSubmit={sealNote}>
               <div className="form-back">
                 <Button variant="ghost" className="back-action" type="button" onClick={() => moveTo("scan")}>
                   <ArrowLeft /> Back
@@ -273,6 +430,43 @@ function Index() {
                     maxLength={60}
                   />
                 </div>
+
+                <div className="voice-block">
+                  <div className="voice-row">
+                    <div className="voice-left">
+                      <span className="voice-mic" aria-hidden="true">
+                        <Mic />
+                      </span>
+                      <div>
+                        <div className="voice-title">Voice note</div>
+                        <div className="voice-meta">
+                          {recording
+                            ? `Recording ${formatDuration(recordSec)}`
+                            : draftVoiceUrl
+                              ? `Saved · ${formatDuration(draftVoiceSec ?? 0)}`
+                              : "Optional · up to 30 seconds"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="voice-actions">
+                      {draftVoiceUrl && !recording ? (
+                        <Button type="button" variant="ghost" className="voice-text-btn" onClick={clearVoice}>
+                          Remove
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        variant="quiet"
+                        className="voice-record-btn"
+                        onClick={recording ? stopRecording : startRecording}
+                      >
+                        {recording ? <Square /> : <Mic />}
+                        {recording ? "Stop" : draftVoiceUrl ? "Re-record" : "Record"}
+                      </Button>
+                    </div>
+                  </div>
+                  {voiceError ? <p className="voice-error">{voiceError}</p> : null}
+                </div>
               </div>
               <div className="form-bottom experience-bottom">
                 <p className="form-hint">Your note stays on this device for the demo.</p>
@@ -301,7 +495,7 @@ function Index() {
               <div className="experience-bottom">
                 <div className="ready-row">
                   <strong>Ready to open</strong>
-                  <span>For {note.recipient}</span>
+                  <span>{note.voiceDataUrl ? "Note + voice" : `For ${note.recipient}`}</span>
                 </div>
                 <Button variant="keepsake" className="full-button" onClick={openNote} disabled={opening}>
                   {opening ? "Opening…" : "Open the note"} <ArrowRight className="mini-icon" />
@@ -324,6 +518,23 @@ function Index() {
                 <article className="letter">
                   <p className="letter-message">{note.message}</p>
                   <p className="letter-signature">{note.from}</p>
+                  {note.voiceDataUrl ? (
+                    <div className="letter-voice">
+                      <Button
+                        type="button"
+                        variant="keepsake"
+                        className="voice-play-btn"
+                        onClick={togglePlayVoice}
+                        aria-label={playingVoice ? "Stop voice note" : "Play voice note"}
+                      >
+                        {playingVoice ? <Square /> : <span className="play-triangle">▶</span>}
+                      </Button>
+                      <div className="letter-voice-copy">
+                        <div className="voice-title">Voice note</div>
+                        <div className="voice-meta">{formatDuration(note.voiceDurationSec ?? 0)}</div>
+                      </div>
+                    </div>
+                  ) : null}
                 </article>
                 <p className="opened-caption">Opened by holding this gift</p>
               </div>
