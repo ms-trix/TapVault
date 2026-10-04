@@ -72,7 +72,9 @@ export function LockedScreen({ note, opening, onOpen, onBack }: Props) {
       <Animated.View style={[styles.footer, { opacity }]}>
         <View style={styles.readyRow}>
           <Text style={styles.readyStrong}>Ready to open</Text>
-          <Text style={styles.readyMute}>For {note.recipient}</Text>
+          <Text style={styles.readyMute}>
+            {note.voiceUri ? 'Note + voice' : `For ${note.recipient}`}
+          </Text>
         </View>
         <KeepsakeButton
           label={opening ? 'Opening…' : 'Open the note'}

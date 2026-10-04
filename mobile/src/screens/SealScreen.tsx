@@ -1,15 +1,26 @@
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ArrowLeft, ArrowRight } from 'lucide-react-native';
+import { VoiceRow } from '../components/VoiceRow';
 import { Field, GhostLink, KeepsakeButton } from '../components/ui';
+import {
+  MAX_VOICE_SEC,
+  cancelVoiceRecording,
+  startVoiceRecording,
+  stopVoiceRecording,
+} from '../lib/voice';
 import { colors } from '../theme';
 
 type Props = {
   recipient: string;
   message: string;
   from: string;
+  voiceUri?: string;
+  voiceDurationSec?: number;
   onChangeRecipient: (v: string) => void;
   onChangeMessage: (v: string) => void;
   onChangeFrom: (v: string) => void;
+  onChangeVoice: (uri?: string, durationSec?: number) => void;
   onBack: () => void;
   onSeal: () => void;
 };
@@ -18,12 +29,79 @@ export function SealScreen({
   recipient,
   message,
   from,
+  voiceUri,
+  voiceDurationSec,
   onChangeRecipient,
   onChangeMessage,
   onChangeFrom,
+  onChangeVoice,
   onBack,
   onSeal,
 }: Props) {
+  const [recording, setRecording] = useState(false);
+  const [recordSec, setRecordSec] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const tick = useRef<ReturnType<typeof setInterval> | null>(null);
+  const canSeal = Boolean(recipient.trim() && message.trim() && from.trim());
+
+  useEffect(
+    () => () => {
+      if (tick.current) clearInterval(tick.current);
+      void cancelVoiceRecording();
+    },
+    [],
+  );
+
+  const clearTick = () => {
+    if (tick.current) {
+      clearInterval(tick.current);
+      tick.current = null;
+    }
+  };
+
+  const toggleRecord = async () => {
+    setError(null);
+    if (recording) {
+      clearTick();
+      try {
+        const result = await stopVoiceRecording();
+        onChangeVoice(result.uri, result.durationSec);
+      } catch {
+        setError('Couldn’t save the recording. Try again.');
+      }
+      setRecording(false);
+      setRecordSec(0);
+      return;
+    }
+
+    try {
+      await startVoiceRecording();
+      setRecording(true);
+      setRecordSec(0);
+      const started = Date.now();
+      tick.current = setInterval(() => {
+        const elapsed = (Date.now() - started) / 1000;
+        setRecordSec(elapsed);
+        if (elapsed >= MAX_VOICE_SEC) {
+          void (async () => {
+            clearTick();
+            try {
+              const result = await stopVoiceRecording();
+              onChangeVoice(result.uri, result.durationSec);
+            } catch {
+              setError('Recording stopped at the 30s limit.');
+            }
+            setRecording(false);
+            setRecordSec(0);
+          })();
+        }
+      }, 200);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Couldn’t reach the microphone.');
+      setRecording(false);
+    }
+  };
+
   return (
     <View style={styles.body}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
@@ -57,6 +135,15 @@ export function SealScreen({
             placeholder="Your name"
             maxLength={60}
           />
+          <VoiceRow
+            recording={recording}
+            recordSec={recordSec}
+            voiceUri={voiceUri}
+            voiceDurationSec={voiceDurationSec}
+            error={error}
+            onToggle={() => void toggleRecord()}
+            onClear={() => onChangeVoice(undefined, undefined)}
+          />
         </View>
       </ScrollView>
       <View style={styles.footer}>
@@ -64,6 +151,7 @@ export function SealScreen({
         <KeepsakeButton
           label="Seal this note"
           onPress={onSeal}
+          disabled={!canSeal || recording}
           trailing={<ArrowRight size={16} color={colors.cream} />}
         />
       </View>
@@ -80,19 +168,14 @@ const styles = StyleSheet.create({
     lineHeight: 46,
     color: colors.ink,
     marginTop: 18,
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  support: {
-    fontSize: 13,
-    lineHeight: 21,
-    color: colors.muteSoft,
-    marginBottom: 20,
-  },
+  support: { fontSize: 13, lineHeight: 21, color: colors.muteSoft, marginBottom: 20 },
   fields: { gap: 20 },
   footer: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: 16,
+    paddingTop: 14,
     gap: 12,
   },
   hint: { fontSize: 11, lineHeight: 16, color: colors.muteSoft },

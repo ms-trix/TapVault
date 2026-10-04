@@ -9,8 +9,9 @@ import { ScanScreen } from './src/screens/ScanScreen';
 import { SealScreen } from './src/screens/SealScreen';
 import { LockedScreen } from './src/screens/LockedScreen';
 import { RevealScreen } from './src/screens/RevealScreen';
-import { DEMO_TAG_ID, ensurePreseed, saveVault } from './src/lib/storage';
+import { DEMO_TAG_ID, ensurePreseed, loadVault, saveVault } from './src/lib/storage';
 import { playClick, playUnlock } from './src/lib/sfx';
+import { stopVoicePlayback } from './src/lib/voice';
 import { colors, timing } from './src/theme';
 import { demoNote, type Note, type ScanPhase, type Screen } from './src/types';
 
@@ -38,6 +39,8 @@ export default function App() {
   const [recipient, setRecipient] = useState('');
   const [message, setMessage] = useState('');
   const [from, setFrom] = useState('');
+  const [voiceUri, setVoiceUri] = useState<string | undefined>();
+  const [voiceDurationSec, setVoiceDurationSec] = useState<number | undefined>();
   const [scanPhase, setScanPhase] = useState<ScanPhase>('listening');
   const [opening, setOpening] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -65,15 +68,18 @@ export default function App() {
     clearTimers();
     if (next === 'scan') setScanPhase('listening');
     setOpening(false);
+    void stopVoicePlayback();
     setScreen(next);
   }, []);
 
   const useDemoTag = () => {
     if (scanPhase !== 'listening') return;
     setScanPhase('detecting');
-    setNote(demoNote);
-    void saveVault(DEMO_TAG_ID, demoNote);
     void playClick();
+    void (async () => {
+      const stored = await loadVault(DEMO_TAG_ID);
+      setNote(stored ?? demoNote);
+    })();
     timers.current.push(
       setTimeout(() => {
         setScanPhase('found');
@@ -88,11 +94,18 @@ export default function App() {
       recipient: recipient.trim(),
       message: message.trim(),
       from: from.trim(),
+      voiceUri,
+      voiceDurationSec,
     };
     if (!next.recipient || !next.message || !next.from) return;
     setNote(next);
     void saveVault(DEMO_TAG_ID, next);
     void playClick();
+    setRecipient('');
+    setMessage('');
+    setFrom('');
+    setVoiceUri(undefined);
+    setVoiceDurationSec(undefined);
     moveTo('locked');
   };
 
@@ -125,9 +138,15 @@ export default function App() {
             recipient={recipient}
             message={message}
             from={from}
+            voiceUri={voiceUri}
+            voiceDurationSec={voiceDurationSec}
             onChangeRecipient={setRecipient}
             onChangeMessage={setMessage}
             onChangeFrom={setFrom}
+            onChangeVoice={(uri, sec) => {
+              setVoiceUri(uri);
+              setVoiceDurationSec(sec);
+            }}
             onBack={() => moveTo('scan')}
             onSeal={sealNote}
           />

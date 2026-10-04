@@ -5,6 +5,8 @@ export type Note = {
   recipient: string;
   message: string;
   from: string;
+  voiceUri?: string;
+  voiceDurationSec?: number;
 };
 
 export const demoNote: Note = {

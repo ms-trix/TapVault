@@ -13,7 +13,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.mstrix.tapvault"
+      "bundleIdentifier": "com.mstrix.tapvault",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "TapVault records an optional short voice note for your sealed message."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,6 +25,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "permissions": ["RECORD_AUDIO"],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -29,7 +33,13 @@
     },
     "plugins": [
       "expo-font",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "TapVault records an optional short voice note for your sealed message."
+        }
+      ]
     ]
   }
 }
