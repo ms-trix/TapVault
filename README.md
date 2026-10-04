@@ -6,6 +6,8 @@ This is the **TapVault** workshop-pitch frontend (migrated from an earlier Lovab
 
 ## Develop locally
 
+### Web Soft Keepsake reference (Vite)
+
 Needs [Bun](https://bun.sh) (or Node 20+).
 
 ```sh
@@ -15,17 +17,26 @@ bun install
 bun run dev
 ```
 
-Open the URL Vite prints (usually `http://127.0.0.1:5173`).
+### iPhone Simulator path (Expo) — Workshop A
+
+```sh
+cd mobile
+npm install
+npx expo start
+```
+
+Then press `i` for **iOS Simulator** (Mac + Xcode). Mock NFC / Soft Keepsake screens land in the next tasks.
 
 ## Scripts
 
 | Command | What it does |
 |---|---|
-| `bun run dev` | Local demo |
-| `bun run build` | Production build |
-| `bun run test` | Vitest |
-| `bun run lint` | ESLint |
+| `bun run dev` | Web Soft Keepsake demo |
+| `bun run build` | Web production build |
+| `bun run test` | Web Vitest |
+| `cd mobile && npx expo start` | Expo → iOS Simulator |
 
 ## Stack
 
-TanStack Start / Vite, React, Tailwind CSS v4, Soft Keepsake pastel-butter design tokens.
+- **Web reference:** TanStack Start / Vite, Soft Keepsake tokens  
+- **Pitch app (A):** Expo (iOS) + AsyncStorage + mock NFC UUID lookup — no API/DB

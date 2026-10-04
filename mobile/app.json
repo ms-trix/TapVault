@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "TapVault",
+    "slug": "tapvault",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#faf6eb"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.mstrix.tapvault"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#faf6eb",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

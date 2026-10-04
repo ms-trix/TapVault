@@ -41,3 +41,10 @@ dist-ssr
 
 # Former Lovable tooling (not used)
 .lovable/
+
+# Expo / mobile
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/ios/
+mobile/android/
