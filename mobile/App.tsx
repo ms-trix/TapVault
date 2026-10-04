@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, DMSans_400Regular, DMSans_600SemiBold } from '@expo-google-fonts/dm-sans';
+import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
 import * as SplashScreen from 'expo-splash-screen';
 import { NfcMark } from './src/components/NfcMark';
 import { AppHeader } from './src/components/ui';
@@ -12,7 +13,7 @@ import { RevealScreen } from './src/screens/RevealScreen';
 import { DEMO_TAG_ID, ensurePreseed, loadVault, saveVault } from './src/lib/storage';
 import { playClick, playUnlock } from './src/lib/sfx';
 import { stopVoicePlayback } from './src/lib/voice';
-import { colors, timing } from './src/theme';
+import { colors, fonts, space, timing } from './src/theme';
 import { demoNote, type Note, type ScanPhase, type Screen } from './src/types';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -32,6 +33,7 @@ export default function App() {
   const [fontsLoaded] = useFonts({
     DMSans_400Regular,
     DMSans_600SemiBold,
+    InstrumentSerif_400Regular,
   });
 
   const [screen, setScreen] = useState<Screen>('scan');
@@ -120,6 +122,8 @@ export default function App() {
     return <View style={styles.root} />;
   }
 
+  const stepLive = screen === 'scan' && scanPhase === 'listening';
+
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar style="dark" />
@@ -129,7 +133,10 @@ export default function App() {
         onNewNote={() => moveTo('seal')}
       />
       <View style={styles.experience}>
-        <Text style={styles.step}>{stepLabel(screen, scanPhase)}</Text>
+        <View style={styles.stepRow}>
+          <View style={[styles.stepDot, stepLive && styles.stepDotLive]} />
+          <Text style={styles.step}>{stepLabel(screen, scanPhase)}</Text>
+        </View>
         {screen === 'scan' && (
           <ScanScreen phase={scanPhase} onDemoTag={useDemoTag} onLeaveNote={() => moveTo('seal')} />
         )}
@@ -179,12 +186,32 @@ const styles = StyleSheet.create({
   experience: {
     flex: 1,
     paddingHorizontal: 26,
-    paddingBottom: 24,
+    paddingBottom: space.lg,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: space.sm,
+    minHeight: 18,
+  },
+  stepDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.border,
+  },
+  stepDotLive: {
+    backgroundColor: colors.butterDeep,
+    shadowColor: colors.butterDeep,
+    shadowOpacity: 0.55,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 0 },
   },
   step: {
+    fontFamily: fonts.sans,
     fontSize: 11,
     color: colors.muteSoft,
-    marginBottom: 10,
-    letterSpacing: 0.2,
+    letterSpacing: 0.25,
   },
 });

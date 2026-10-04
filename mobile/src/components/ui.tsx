@@ -7,7 +7,7 @@ import {
   TextInput,
   type TextInputProps,
 } from 'react-native';
-import { colors } from '../theme';
+import { colors, fonts, radii, type } from '../theme';
 
 export function KeepsakeButton({
   label,
@@ -32,7 +32,8 @@ export function KeepsakeButton({
       style={({ pressed }) => [
         styles.keepsake,
         fullWidth && styles.fullWidth,
-        (pressed || disabled) && { opacity: disabled ? 0.45 : 0.88 },
+        disabled && styles.keepsakeDisabled,
+        pressed && !disabled && styles.keepsakePressed,
       ]}
     >
       {leading}
@@ -55,7 +56,7 @@ export function QuietButton({
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.quiet, pressed && { opacity: 0.85 }]}
+      style={({ pressed }) => [styles.quiet, pressed && styles.quietPressed]}
     >
       {leading}
       <Text style={styles.quietLabel}>{label}</Text>
@@ -73,7 +74,11 @@ export function GhostLink({
   leading?: ReactNode;
 }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={styles.ghostLink}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.ghostLink, pressed && { opacity: 0.7 }]}
+    >
       {leading}
       <Text style={styles.ghostLinkLabel}>{label}</Text>
     </Pressable>
@@ -85,7 +90,7 @@ export function Field({ label, ...props }: { label: string } & TextInputProps) {
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <TextInput
-        placeholderTextColor={`${colors.muteSoft}B3`}
+        placeholderTextColor={`${colors.muteSoft}99`}
         style={[styles.input, props.multiline && styles.textarea]}
         {...props}
       />
@@ -106,7 +111,7 @@ export function AppHeader({
     <View style={styles.header}>
       <Pressable
         onPress={onHome}
-        style={styles.brandRow}
+        style={({ pressed }) => [styles.brandRow, pressed && { opacity: 0.85 }]}
         accessibilityRole="button"
         accessibilityLabel="TapVault home"
       >
@@ -120,7 +125,7 @@ export function AppHeader({
         onPress={onNewNote}
         accessibilityRole="button"
         accessibilityLabel="Leave a new note"
-        style={styles.plusHit}
+        style={({ pressed }) => [styles.plusHit, pressed && styles.plusPressed]}
       >
         <Text style={styles.plus}>+</Text>
       </Pressable>
@@ -130,30 +135,37 @@ export function AppHeader({
 
 const styles = StyleSheet.create({
   keepsake: {
-    minHeight: 54,
+    minHeight: 56,
     backgroundColor: colors.ink,
     borderColor: colors.ink,
     borderWidth: 1,
-    borderRadius: 3,
+    borderRadius: radii.control,
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
   },
+  keepsakePressed: {
+    transform: [{ scale: 0.985 }],
+    opacity: 0.94,
+  },
+  keepsakeDisabled: {
+    opacity: 0.42,
+  },
   fullWidth: { width: '100%' },
   trailing: { marginLeft: 'auto' },
   keepsakeLabel: {
+    ...type.ui,
     color: colors.cream,
-    fontSize: 13,
-    fontWeight: '600',
+    letterSpacing: 0.15,
   },
   quiet: {
-    minHeight: 48,
-    backgroundColor: colors.cream,
+    minHeight: 50,
+    backgroundColor: colors.paper,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: 3,
+    borderRadius: radii.control,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -161,10 +173,13 @@ const styles = StyleSheet.create({
     gap: 8,
     flex: 1,
   },
+  quietPressed: {
+    transform: [{ scale: 0.985 }],
+    backgroundColor: colors.cream,
+  },
   quietLabel: {
+    ...type.ui,
     color: colors.ink,
-    fontSize: 13,
-    fontWeight: '600',
   },
   ghostLink: {
     flexDirection: 'row',
@@ -173,68 +188,85 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   ghostLinkLabel: {
-    color: colors.mute,
+    fontFamily: fonts.sansSemi,
     fontSize: 12,
-    fontWeight: '600',
+    color: colors.mute,
+    textDecorationLine: 'underline',
+    textDecorationColor: colors.butterDeep,
   },
   field: { gap: 8 },
-  fieldLabel: { fontSize: 12, fontWeight: '600', color: colors.ink },
+  fieldLabel: {
+    fontFamily: fonts.sansSemi,
+    fontSize: 12,
+    color: colors.ink,
+  },
   input: {
     borderWidth: 1,
     borderColor: colors.softLine,
     backgroundColor: colors.paper,
-    borderRadius: 2,
-    paddingHorizontal: 13,
-    paddingVertical: 13,
-    fontSize: 14,
+    borderRadius: radii.hair,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    fontFamily: fonts.sans,
+    fontSize: 15,
+    lineHeight: 22,
     color: colors.ink,
   },
   textarea: {
-    minHeight: 145,
+    minHeight: 150,
     textAlignVertical: 'top',
+    paddingTop: 14,
   },
   header: {
-    height: 74,
+    height: 78,
     paddingHorizontal: 26,
-    paddingTop: 10,
+    paddingTop: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 11 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   brandMark: {
-    width: 34,
-    height: 34,
-    borderRadius: 7,
+    width: 36,
+    height: 36,
+    borderRadius: radii.mark,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.butter,
     alignItems: 'center',
     justifyContent: 'center',
-    transform: [{ rotate: '-6deg' }],
+    transform: [{ rotate: '-5deg' }],
   },
   brandName: {
-    fontFamily: 'Georgia',
-    fontSize: 26,
+    ...type.brand,
     color: colors.ink,
-    lineHeight: 28,
   },
   brandSub: {
-    marginTop: 2,
+    marginTop: 3,
+    fontFamily: fonts.sans,
     fontSize: 11,
     color: colors.muteSoft,
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
   plusHit: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
+    borderRadius: radii.control,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.paper,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  plusPressed: {
+    transform: [{ scale: 0.96 }],
+    backgroundColor: colors.butter,
+  },
   plus: {
-    fontSize: 28,
+    fontFamily: fonts.sans,
+    fontSize: 24,
     color: colors.ink,
-    lineHeight: 30,
-    marginTop: -2,
+    lineHeight: 26,
+    marginTop: -1,
   },
 });

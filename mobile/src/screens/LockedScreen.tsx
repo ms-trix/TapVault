@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { ArrowRight } from 'lucide-react-native';
 import { NfcMark } from '../components/NfcMark';
+import { SoftAmbient } from '../components/SoftAmbient';
 import { GhostLink, KeepsakeButton } from '../components/ui';
 import { NATIVE_DRIVER } from '../lib/motion';
-import { colors } from '../theme';
+import { colors, fonts, radii, space, type } from '../theme';
 import type { Note } from '../types';
 
 type Props = {
@@ -16,43 +17,64 @@ type Props = {
 
 export function LockedScreen({ note, opening, onOpen, onBack }: Props) {
   const opacity = useRef(new Animated.Value(0)).current;
-  const emblemScale = useRef(new Animated.Value(0.92)).current;
+  const emblemScale = useRef(new Animated.Value(0.9)).current;
+  const rise = useRef(new Animated.Value(12)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
-        duration: 420,
+        duration: 360,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: NATIVE_DRIVER,
+      }),
+      Animated.timing(rise, {
+        toValue: 0,
+        duration: 360,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: NATIVE_DRIVER,
       }),
       Animated.spring(emblemScale, {
         toValue: 1,
         friction: 8,
-        tension: 70,
+        tension: 68,
         useNativeDriver: NATIVE_DRIVER,
       }),
     ]).start();
-  }, [emblemScale, opacity]);
+  }, [emblemScale, opacity, rise]);
 
   useEffect(() => {
     if (!opening) return;
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 0,
-        duration: 380,
+        duration: 360,
+        easing: Easing.in(Easing.cubic),
         useNativeDriver: NATIVE_DRIVER,
       }),
       Animated.timing(emblemScale, {
-        toValue: 1.08,
-        duration: 380,
+        toValue: 1.1,
+        duration: 360,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: NATIVE_DRIVER,
+      }),
+      Animated.timing(rise, {
+        toValue: -8,
+        duration: 360,
         useNativeDriver: NATIVE_DRIVER,
       }),
     ]).start();
-  }, [emblemScale, opening, opacity]);
+  }, [emblemScale, opening, opacity, rise]);
 
   return (
     <View style={styles.body}>
-      <Animated.View style={[styles.main, { opacity }]}>
+      <SoftAmbient />
+      <Animated.View
+        style={[
+          styles.main,
+          { opacity, transform: [{ translateY: rise }] },
+        ]}
+      >
         <View style={styles.meta}>
           <Text style={styles.metaText}>
             For {note.recipient} · From {note.from}
@@ -61,10 +83,12 @@ export function LockedScreen({ note, opening, onOpen, onBack }: Props) {
         <Animated.View
           style={[
             styles.emblem,
-            { transform: [{ rotate: '-5deg' }, { scale: emblemScale }] },
+            { transform: [{ rotate: '-4deg' }, { scale: emblemScale }] },
           ]}
         >
-          <NfcMark size={54} />
+          <View style={styles.emblemInner}>
+            <NfcMark size={48} />
+          </View>
         </Animated.View>
         <Text style={styles.title}>Still sealed.</Text>
         <Text style={styles.teaser}>A few words are waiting here, just for {note.recipient}.</Text>
@@ -89,40 +113,54 @@ export function LockedScreen({ note, opening, onOpen, onBack }: Props) {
 }
 
 const styles = StyleSheet.create({
-  body: { flex: 1 },
+  body: { flex: 1, position: 'relative' },
   main: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
+    zIndex: 1,
   },
   meta: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 100,
-    paddingHorizontal: 15,
+    borderRadius: radii.pill,
+    paddingHorizontal: 16,
     paddingVertical: 8,
+    backgroundColor: colors.paper,
   },
-  metaText: { fontSize: 12, fontWeight: '600', color: colors.muteSoft },
+  metaText: {
+    fontFamily: fonts.sansSemi,
+    fontSize: 12,
+    color: colors.muteSoft,
+  },
   emblem: {
-    width: 104,
-    height: 104,
-    marginVertical: 40,
-    borderRadius: 16,
+    width: 108,
+    height: 108,
+    marginVertical: 36,
+    borderRadius: radii.tag,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.butter,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  emblemInner: {
+    width: 88,
+    height: 88,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: `${colors.ink}14`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
-    fontFamily: 'Georgia',
-    fontSize: 44,
-    lineHeight: 46,
+    ...type.displayHero,
     color: colors.ink,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   teaser: {
+    fontFamily: fonts.sans,
     fontSize: 15,
     lineHeight: 23,
     color: colors.muteSoft,
@@ -132,16 +170,25 @@ const styles = StyleSheet.create({
   footer: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: 16,
-    gap: 10,
+    paddingTop: space.md,
+    gap: space.sm,
     alignItems: 'center',
+    zIndex: 1,
   },
   readyRow: {
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  readyStrong: { fontSize: 11, fontWeight: '600', color: colors.ink },
-  readyMute: { fontSize: 11, color: colors.muteSoft },
+  readyStrong: {
+    fontFamily: fonts.sansSemi,
+    fontSize: 11,
+    color: colors.ink,
+  },
+  readyMute: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    color: colors.muteSoft,
+  },
 });

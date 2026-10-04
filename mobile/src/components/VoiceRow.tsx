@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Mic } from 'lucide-react-native';
-import { colors } from '../theme';
+import { colors, fonts, radii } from '../theme';
 import { formatDuration } from '../lib/voice';
 
 type Props = {
@@ -34,7 +34,13 @@ export function VoiceRow({
     <View style={styles.block}>
       <View style={styles.row}>
         <View style={styles.left}>
-          <View style={[styles.badge, recording && styles.badgeLive, voiceUri && !recording && styles.badgeSaved]}>
+          <View
+            style={[
+              styles.badge,
+              recording && styles.badgeLive,
+              voiceUri && !recording && styles.badgeSaved,
+            ]}
+          >
             {recording ? <View style={styles.liveDot} /> : <Mic size={15} color={colors.ink} />}
           </View>
           <View style={styles.copy}>
@@ -55,7 +61,7 @@ export function VoiceRow({
             style={({ pressed }) => [
               styles.btn,
               recording ? styles.btnStop : voiceUri ? styles.btnRerecord : styles.btnRecord,
-              pressed && { opacity: 0.88 },
+              pressed && styles.btnPressed,
             ]}
           >
             {recording ? (
@@ -89,7 +95,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paper,
     borderWidth: 1,
     borderColor: colors.softLine,
-    borderRadius: 2,
+    borderRadius: radii.hair,
     paddingVertical: 12,
     paddingHorizontal: 12,
   },
@@ -118,20 +124,39 @@ const styles = StyleSheet.create({
     backgroundColor: colors.butter,
   },
   copy: { flexShrink: 1 },
-  title: { fontSize: 13, fontWeight: '600', color: colors.ink },
-  meta: { fontSize: 11, color: colors.muteSoft, marginTop: 2 },
-  metaLive: { color: colors.ink, fontWeight: '600' },
+  title: {
+    fontFamily: fonts.sansSemi,
+    fontSize: 13,
+    color: colors.ink,
+  },
+  meta: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    color: colors.muteSoft,
+    marginTop: 2,
+  },
+  metaLive: { color: colors.ink, fontFamily: fonts.sansSemi },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 0 },
   removeHit: { paddingVertical: 6, paddingHorizontal: 2 },
-  remove: { fontSize: 12, color: colors.muteSoft, fontWeight: '600' },
+  remove: {
+    fontFamily: fonts.sansSemi,
+    fontSize: 12,
+    color: colors.muteSoft,
+    textDecorationLine: 'underline',
+    textDecorationColor: colors.butterDeep,
+  },
   btn: {
-    minHeight: 38,
+    minHeight: 40,
     paddingHorizontal: 14,
-    borderRadius: 3,
+    borderRadius: radii.control,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
+  },
+  btnPressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.92,
   },
   btnRecord: {
     backgroundColor: colors.ink,
@@ -151,8 +176,16 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: colors.ink,
   },
-  btnLabel: { fontSize: 12, fontWeight: '600' },
+  btnLabel: {
+    fontFamily: fonts.sansSemi,
+    fontSize: 12,
+  },
   btnLabelCream: { color: colors.cream },
   btnLabelInk: { color: colors.ink },
-  error: { fontSize: 11, color: '#9b3b3b', lineHeight: 16 },
+  error: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    color: '#9b3b3b',
+    lineHeight: 16,
+  },
 });

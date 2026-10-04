@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ArrowLeft, Plus, Square } from 'lucide-react-native';
 import { SoftAmbient } from '../components/SoftAmbient';
 import { KeepsakeButton, QuietButton } from '../components/ui';
 import { NATIVE_DRIVER } from '../lib/motion';
 import { formatDuration, playVoice, stopVoicePlayback } from '../lib/voice';
-import { colors } from '../theme';
+import { colors, fonts, radii, space, type } from '../theme';
 import type { Note } from '../types';
 
 type Props = {
@@ -22,7 +22,8 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
     letter.setValue(0);
     Animated.timing(letter, {
       toValue: 1,
-      duration: 520,
+      duration: 480,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: NATIVE_DRIVER,
     }).start();
   }, [letter, note.recipient, note.message]);
@@ -64,7 +65,7 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
                 {
                   translateY: letter.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [16, 0],
+                    outputRange: [14, 0],
                   }),
                 },
               ],
@@ -77,7 +78,7 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
             <View style={styles.voice}>
               <Pressable
                 onPress={() => void toggleVoice()}
-                style={({ pressed }) => [styles.play, pressed && { opacity: 0.85 }]}
+                style={({ pressed }) => [styles.play, pressed && styles.playPressed]}
                 accessibilityRole="button"
                 accessibilityLabel={playing ? 'Stop voice note' : 'Play voice note'}
               >
@@ -117,34 +118,35 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
 const styles = StyleSheet.create({
   body: { flex: 1, position: 'relative' },
   scroll: { zIndex: 1 },
-  main: { paddingTop: 20, paddingBottom: 16 },
-  kicker: { fontSize: 12, color: colors.muteSoft },
+  main: { paddingTop: space.md, paddingBottom: space.md },
+  kicker: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.muteSoft,
+  },
   heading: {
-    fontFamily: 'Georgia',
-    fontSize: 44,
-    lineHeight: 46,
+    ...type.displayHero,
     color: colors.ink,
-    marginTop: 10,
-    marginBottom: 22,
+    marginTop: space.sm,
+    marginBottom: space.lg,
   },
   letter: {
     borderWidth: 1,
     borderColor: colors.softLine,
     backgroundColor: colors.paper,
     paddingHorizontal: 28,
-    paddingVertical: 30,
+    paddingVertical: 32,
     minHeight: 280,
+    borderRadius: radii.hair,
   },
   message: {
-    fontSize: 19,
-    lineHeight: 30,
+    ...type.bodyLarge,
     color: colors.ink,
   },
   signature: {
-    fontFamily: 'Georgia',
-    fontSize: 27,
+    ...type.displaySign,
     color: colors.ink,
-    marginTop: 36,
+    marginTop: 40,
   },
   voice: {
     flexDirection: 'row',
@@ -156,27 +158,46 @@ const styles = StyleSheet.create({
     borderTopColor: colors.softLine,
   },
   play: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  playTriangle: { color: colors.cream, fontSize: 14, marginLeft: 2 },
-  voiceTitle: { fontSize: 13, fontWeight: '600', color: colors.ink },
-  voiceMeta: { fontSize: 11, color: colors.muteSoft, marginTop: 2 },
+  playPressed: {
+    transform: [{ scale: 0.96 }],
+    opacity: 0.92,
+  },
+  playTriangle: {
+    color: colors.cream,
+    fontSize: 14,
+    marginLeft: 2,
+    fontFamily: fonts.sans,
+  },
+  voiceTitle: {
+    fontFamily: fonts.sansSemi,
+    fontSize: 13,
+    color: colors.ink,
+  },
+  voiceMeta: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    color: colors.muteSoft,
+    marginTop: 2,
+  },
   caption: {
     textAlign: 'center',
+    fontFamily: fonts.sans,
     color: colors.muteSoft,
     fontSize: 11,
-    marginTop: 16,
+    marginTop: space.md,
   },
   footer: {
     zIndex: 1,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: 16,
+    paddingTop: space.md,
     flexDirection: 'row',
     gap: 10,
   },

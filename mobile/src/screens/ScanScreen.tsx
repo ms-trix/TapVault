@@ -5,7 +5,7 @@ import { NfcMark } from '../components/NfcMark';
 import { SoftAmbient } from '../components/SoftAmbient';
 import { GhostLink, KeepsakeButton } from '../components/ui';
 import { NATIVE_DRIVER } from '../lib/motion';
-import { colors, timing } from '../theme';
+import { colors, fonts, radii, space, timing, type } from '../theme';
 import type { ScanPhase } from '../types';
 
 type Props = {
@@ -20,6 +20,7 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
   const ringSettle = useRef(new Animated.Value(0)).current;
   const tagScale = useRef(new Animated.Value(1)).current;
   const checkOpacity = useRef(new Animated.Value(0)).current;
+  const copyOpacity = useRef(new Animated.Value(1)).current;
   const active = useRef<Animated.CompositeAnimation[]>([]);
 
   useEffect(() => {
@@ -31,6 +32,20 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
     ringSettle.setValue(phase === 'found' ? 1 : 0);
     tagScale.setValue(1);
     checkOpacity.setValue(0);
+
+    Animated.sequence([
+      Animated.timing(copyOpacity, {
+        toValue: 0.35,
+        duration: 90,
+        useNativeDriver: NATIVE_DRIVER,
+      }),
+      Animated.timing(copyOpacity, {
+        toValue: 1,
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: NATIVE_DRIVER,
+      }),
+    ]).start();
 
     if (phase === 'listening') {
       const ring = Animated.loop(
@@ -106,7 +121,6 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
       return () => active.current.forEach((a) => a.stop());
     }
 
-    // found
     ringSettle.setValue(1);
     const settle = Animated.parallel([
       Animated.timing(tagScale, {
@@ -125,7 +139,7 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
     active.current = [settle];
     settle.start();
     return () => active.current.forEach((a) => a.stop());
-  }, [phase, ringPulse, sweep, ringSettle, tagScale, checkOpacity]);
+  }, [phase, ringPulse, sweep, ringSettle, tagScale, checkOpacity, copyOpacity]);
 
   const ringOpacity = ringPulse.interpolate({
     inputRange: [0, 1],
@@ -191,8 +205,10 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
             ) : null}
           </Animated.View>
         </View>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>{subtitle}</Text>
+        <Animated.View style={{ opacity: copyOpacity, alignItems: 'center' }}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
+        </Animated.View>
       </View>
       <View style={styles.footer}>
         <KeepsakeButton
@@ -218,42 +234,42 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   stage: {
-    width: 200,
-    height: 200,
+    width: 204,
+    height: 204,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 32,
+    marginBottom: space.xl,
   },
   ring: {
     position: 'absolute',
-    borderRadius: 999,
+    borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: colors.softLine,
   },
   ringOuter: {
-    width: 188,
-    height: 188,
+    width: 192,
+    height: 192,
   },
   ringInner: {
-    width: 132,
-    height: 132,
+    width: 136,
+    height: 136,
     borderColor: colors.border,
-    opacity: 0.7,
+    opacity: 0.72,
   },
   sweep: {
     position: 'absolute',
-    width: 188,
-    height: 188,
-    borderRadius: 999,
+    width: 192,
+    height: 192,
+    borderRadius: radii.pill,
     borderWidth: 1.5,
     borderColor: 'transparent',
     borderTopColor: colors.ink,
     borderRightColor: `${colors.ink}33`,
   },
   tag: {
-    width: 72,
-    height: 72,
-    borderRadius: 16,
+    width: 74,
+    height: 74,
+    borderRadius: radii.tag,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.butter,
@@ -272,15 +288,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontFamily: 'Georgia',
-    fontSize: 36,
-    lineHeight: 40,
+    ...type.displayTitle,
     color: colors.ink,
     textAlign: 'center',
-    marginBottom: 10,
-    letterSpacing: -0.3,
+    marginBottom: space.sm,
   },
   subtitle: {
+    fontFamily: fonts.sans,
     fontSize: 13,
     lineHeight: 20,
     color: colors.muteSoft,
@@ -290,8 +304,8 @@ const styles = StyleSheet.create({
   footer: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: 20,
-    gap: 8,
+    paddingTop: space.md,
+    gap: space.xs,
     alignItems: 'center',
     zIndex: 1,
   },

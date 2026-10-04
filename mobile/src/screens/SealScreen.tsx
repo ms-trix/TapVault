@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ArrowLeft, ArrowRight } from 'lucide-react-native';
+import { ScreenEnter } from '../components/ScreenEnter';
 import { VoiceRow } from '../components/VoiceRow';
 import { Field, GhostLink, KeepsakeButton } from '../components/ui';
 import {
@@ -9,7 +10,7 @@ import {
   startVoiceRecording,
   stopVoiceRecording,
 } from '../lib/voice';
-import { colors } from '../theme';
+import { colors, fonts, space, type } from '../theme';
 
 type Props = {
   recipient: string;
@@ -103,80 +104,91 @@ export function SealScreen({
   };
 
   return (
-    <View style={styles.body}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <GhostLink
-          label="Back"
-          onPress={onBack}
-          leading={<ArrowLeft size={15} color={colors.mute} />}
-        />
-        <Text style={styles.heading}>Leave a note</Text>
-        <Text style={styles.support}>A few words they can keep close.</Text>
-        <View style={styles.fields}>
-          <Field
-            label="For"
-            value={recipient}
-            onChangeText={onChangeRecipient}
-            placeholder="Someone special"
-            maxLength={60}
+    <ScreenEnter>
+      <View style={styles.body}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <GhostLink
+            label="Back"
+            onPress={onBack}
+            leading={<ArrowLeft size={15} color={colors.mute} />}
           />
-          <Field
-            label="Message"
-            value={message}
-            onChangeText={onChangeMessage}
-            placeholder="Write what you want them to remember…"
-            maxLength={1000}
-            multiline
-          />
-          <Field
-            label="From"
-            value={from}
-            onChangeText={onChangeFrom}
-            placeholder="Your name"
-            maxLength={60}
-          />
-          <VoiceRow
-            recording={recording}
-            recordSec={recordSec}
-            voiceUri={voiceUri}
-            voiceDurationSec={voiceDurationSec}
-            error={error}
-            onToggle={() => void toggleRecord()}
-            onClear={() => onChangeVoice(undefined, undefined)}
+          <Text style={styles.heading}>Leave a note</Text>
+          <Text style={styles.support}>A few words they can keep close.</Text>
+          <View style={styles.fields}>
+            <Field
+              label="For"
+              value={recipient}
+              onChangeText={onChangeRecipient}
+              placeholder="Someone special"
+              maxLength={60}
+            />
+            <Field
+              label="Message"
+              value={message}
+              onChangeText={onChangeMessage}
+              placeholder="Write what you want them to remember…"
+              maxLength={1000}
+              multiline
+            />
+            <Field
+              label="From"
+              value={from}
+              onChangeText={onChangeFrom}
+              placeholder="Your name"
+              maxLength={60}
+            />
+            <VoiceRow
+              recording={recording}
+              recordSec={recordSec}
+              voiceUri={voiceUri}
+              voiceDurationSec={voiceDurationSec}
+              error={error}
+              onToggle={() => void toggleRecord()}
+              onClear={() => onChangeVoice(undefined, undefined)}
+            />
+          </View>
+        </ScrollView>
+        <View style={styles.footer}>
+          <Text style={styles.hint}>Your note stays on this device for the demo.</Text>
+          <KeepsakeButton
+            label="Seal this note"
+            onPress={onSeal}
+            disabled={!canSeal || recording}
+            trailing={<ArrowRight size={16} color={colors.cream} />}
           />
         </View>
-      </ScrollView>
-      <View style={styles.footer}>
-        <Text style={styles.hint}>Your note stays on this device for the demo.</Text>
-        <KeepsakeButton
-          label="Seal this note"
-          onPress={onSeal}
-          disabled={!canSeal || recording}
-          trailing={<ArrowRight size={16} color={colors.cream} />}
-        />
       </View>
-    </View>
+    </ScreenEnter>
   );
 }
 
 const styles = StyleSheet.create({
   body: { flex: 1 },
-  scroll: { paddingTop: 8, paddingBottom: 20, gap: 8 },
+  scroll: { paddingTop: 4, paddingBottom: space.md, gap: 4 },
   heading: {
-    fontFamily: 'Georgia',
-    fontSize: 44,
-    lineHeight: 46,
+    ...type.displayHero,
     color: colors.ink,
-    marginTop: 18,
-    marginBottom: 8,
+    marginTop: space.md,
+    marginBottom: space.xs,
   },
-  support: { fontSize: 13, lineHeight: 21, color: colors.muteSoft, marginBottom: 20 },
-  fields: { gap: 20 },
+  support: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    lineHeight: 21,
+    color: colors.muteSoft,
+    marginBottom: space.lg,
+  },
+  fields: { gap: space.lg },
   footer: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: 14,
+    paddingTop: space.md,
     gap: 12,
   },
-  hint: { fontSize: 11, lineHeight: 16, color: colors.muteSoft },
+  hint: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    lineHeight: 16,
+    color: colors.muteSoft,
+  },
 });
