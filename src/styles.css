@@ -82,7 +82,44 @@
 .step { display: flex; align-items: center; gap: 8px; }
 .step-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--butter-deep); border: 1px solid var(--foreground); }
 .step-dot-live { animation: status-pulse 2.8s ease-in-out infinite; }
-.experience-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.experience-body { flex: 1; display: flex; flex-direction: column; min-height: 0; position: relative; isolation: isolate; }
+.soft-ambient {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.soft-ambient-mote {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--butter);
+  opacity: 0.18;
+  filter: blur(18px);
+  will-change: transform;
+}
+.mote-a {
+  width: 140px; height: 140px;
+  left: -24px; top: 12%;
+  animation: mote-drift-a 22s ease-in-out infinite;
+}
+.mote-b {
+  width: 110px; height: 110px;
+  right: -18px; top: 48%;
+  opacity: 0.14;
+  animation: mote-drift-b 26s ease-in-out infinite;
+}
+.mote-c {
+  width: 90px; height: 90px;
+  left: 36%; bottom: 8%;
+  opacity: 0.12;
+  animation: mote-drift-c 24s ease-in-out infinite;
+}
+.scan-screen > *:not(.soft-ambient),
+.reveal-screen > *:not(.soft-ambient) {
+  position: relative;
+  z-index: 1;
+}
 .scan-main { display: flex; flex-direction: column; flex: 1; align-items: center; text-align: center; justify-content: center; padding: 14px 0 19px; }
 .object-stage { width: min(100%, 278px); aspect-ratio: 1; position: relative; display: grid; place-items: center; isolation: isolate; margin: 0 auto 32px; }
 .scan-orbit { position: absolute; border: 1px solid var(--soft-line); border-radius: 50%; pointer-events: none; transition: border-color .4s, opacity .4s; }
@@ -238,6 +275,18 @@
 .mini-icon { width: 16px; height: 16px; }
 .screen-enter { animation: enter .45s ease both; }
 @keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes mote-drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(18px, 22px, 0) scale(1.06); }
+}
+@keyframes mote-drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-16px, -14px, 0) scale(1.04); }
+}
+@keyframes mote-drift-c {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(12px, -18px, 0); }
+}
 @keyframes reveal-arrive { from { opacity: 0; } to { opacity: 1; } }
 @keyframes status-pulse { 50% { box-shadow: 0 0 0 4px var(--butter); } }
 @keyframes orbit-breathe {
@@ -291,9 +340,11 @@
   .scan-center,
   .step-dot-live,
   .scan-screen.listening .scan-orbit-outer,
-  .scan-screen.listening .scan-orbit-inner {
+  .scan-screen.listening .scan-orbit-inner,
+  .soft-ambient-mote {
     animation: none !important;
   }
+  .soft-ambient { display: none; }
   *, *::before, *::after {
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;

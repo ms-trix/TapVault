@@ -59,6 +59,17 @@ function NfcMark() {
   );
 }
 
+/** Barely-there butter motes — atmosphere only, never the hero. */
+function SoftAmbient() {
+  return (
+    <div className="soft-ambient" aria-hidden="true">
+      <span className="soft-ambient-mote mote-a" />
+      <span className="soft-ambient-mote mote-b" />
+      <span className="soft-ambient-mote mote-c" />
+    </div>
+  );
+}
+
 function stepLabel(screen: Screen, scanPhase: ScanPhase) {
   if (screen === "scan") {
     if (scanPhase === "found") return "Demo tag found";
@@ -329,6 +340,7 @@ function Index() {
 
           {screen === "scan" && (
             <div className={`experience-body scan-screen ${scanPhase}`} key="scan">
+              <SoftAmbient />
               <div className="scan-main">
                 <div className="object-stage">
                   <div className="scan-orbit scan-orbit-outer" aria-hidden="true" />
@@ -512,6 +524,7 @@ function Index() {
               className={`experience-body screen-enter reveal-screen ${revealFromUnlock ? "from-unlock" : ""}`}
               key="reveal"
             >
+              <SoftAmbient />
               <div className="reveal-main">
                 <span className="reveal-kicker">From {note.from}</span>
                 <h1 className="reveal-heading">For {note.recipient}.</h1>
