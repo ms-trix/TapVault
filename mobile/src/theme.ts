@@ -10,6 +10,17 @@ export const colors = {
   muteSoft: '#8a8170',
 } as const;
 
+/** Quiet paper material — cream-family only, no loud gradients. */
+export const surface = {
+  washTop: 'rgba(230, 213, 154, 0.14)',
+  washBottom: 'rgba(232, 216, 154, 0.18)',
+  moteStrong: 0.14,
+  moteMid: 0.1,
+  moteSoft: 0.07,
+  edge: colors.butterDeep,
+  rail: colors.paper,
+} as const;
+
 export const fonts = {
   display: 'InstrumentSerif_400Regular',
   sans: 'DMSans_400Regular',

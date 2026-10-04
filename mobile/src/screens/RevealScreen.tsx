@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ArrowLeft, Plus, Square } from 'lucide-react-native';
-import { SoftAmbient } from '../components/SoftAmbient';
+import { FooterRail } from '../components/PaperSurface';
 import { KeepsakeButton, QuietButton } from '../components/ui';
 import { NATIVE_DRIVER } from '../lib/motion';
 import { formatDuration, playVoice, stopVoicePlayback } from '../lib/voice';
@@ -52,7 +52,6 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
 
   return (
     <View style={styles.body}>
-      <SoftAmbient />
       <ScrollView contentContainerStyle={styles.main} style={styles.scroll}>
         <Text style={styles.kicker}>From {note.from}</Text>
         <Text style={styles.heading}>For {note.recipient}.</Text>
@@ -73,31 +72,35 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
           ]}
         >
           <Text style={styles.message}>{note.message}</Text>
-          <Text style={styles.signature}>{note.from}</Text>
-          {note.voiceUri ? (
-            <View style={styles.voice}>
-              <Pressable
-                onPress={() => void toggleVoice()}
-                style={({ pressed }) => [styles.play, pressed && styles.playPressed]}
-                accessibilityRole="button"
-                accessibilityLabel={playing ? 'Stop voice note' : 'Play voice note'}
-              >
-                {playing ? (
-                  <Square size={14} color={colors.cream} />
-                ) : (
-                  <Text style={styles.playTriangle}>▶</Text>
-                )}
-              </Pressable>
-              <View>
-                <Text style={styles.voiceTitle}>Voice note</Text>
-                <Text style={styles.voiceMeta}>{formatDuration(note.voiceDurationSec ?? 0)}</Text>
+          <View style={styles.letterFoot}>
+            <Text style={styles.signature}>{note.from}</Text>
+            {note.voiceUri ? (
+              <View style={styles.voice}>
+                <Pressable
+                  onPress={() => void toggleVoice()}
+                  style={({ pressed }) => [styles.play, pressed && styles.playPressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel={playing ? 'Stop voice note' : 'Play voice note'}
+                >
+                  {playing ? (
+                    <Square size={14} color={colors.cream} />
+                  ) : (
+                    <Text style={styles.playTriangle}>▶</Text>
+                  )}
+                </Pressable>
+                <View>
+                  <Text style={styles.voiceTitle}>Voice note</Text>
+                  <Text style={styles.voiceMeta}>
+                    {formatDuration(note.voiceDurationSec ?? 0)}
+                  </Text>
+                </View>
               </View>
-            </View>
-          ) : null}
+            ) : null}
+          </View>
         </Animated.View>
         <Text style={styles.caption}>Opened by holding this gift</Text>
       </ScrollView>
-      <View style={styles.footer}>
+      <FooterRail style={styles.footer}>
         <QuietButton
           label="Start again"
           onPress={onStartAgain}
@@ -110,15 +113,19 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
             leading={<Plus size={16} color={colors.cream} />}
           />
         </View>
-      </View>
+      </FooterRail>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { flex: 1, position: 'relative' },
-  scroll: { zIndex: 1 },
-  main: { paddingTop: space.md, paddingBottom: space.md },
+  body: { flex: 1 },
+  scroll: { flex: 1 },
+  main: {
+    flexGrow: 1,
+    paddingTop: space.sm,
+    paddingBottom: space.md,
+  },
   kicker: {
     fontFamily: fonts.sans,
     fontSize: 12,
@@ -128,31 +135,35 @@ const styles = StyleSheet.create({
     ...type.displayHero,
     color: colors.ink,
     marginTop: space.sm,
-    marginBottom: space.lg,
+    marginBottom: space.md,
   },
   letter: {
+    flexGrow: 1,
     borderWidth: 1,
     borderColor: colors.softLine,
-    backgroundColor: colors.paper,
-    paddingHorizontal: 28,
-    paddingVertical: 32,
-    minHeight: 280,
+    backgroundColor: colors.cream,
+    paddingHorizontal: 26,
+    paddingVertical: 28,
+    minHeight: 340,
     borderRadius: radii.hair,
+    justifyContent: 'space-between',
   },
   message: {
     ...type.bodyLarge,
     color: colors.ink,
   },
+  letterFoot: {
+    marginTop: 36,
+  },
   signature: {
     ...type.displaySign,
     color: colors.ink,
-    marginTop: 40,
   },
   voice: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 28,
+    marginTop: 22,
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: colors.softLine,
@@ -194,10 +205,8 @@ const styles = StyleSheet.create({
     marginTop: space.md,
   },
   footer: {
-    zIndex: 1,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: space.md,
+    marginHorizontal: -18,
+    paddingHorizontal: 18,
     flexDirection: 'row',
     gap: 10,
   },

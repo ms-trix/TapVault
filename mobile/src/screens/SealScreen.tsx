@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ArrowLeft, ArrowRight } from 'lucide-react-native';
+import { FooterRail } from '../components/PaperSurface';
 import { ScreenEnter } from '../components/ScreenEnter';
 import { VoiceRow } from '../components/VoiceRow';
 import { Field, GhostLink, KeepsakeButton } from '../components/ui';
@@ -10,7 +11,7 @@ import {
   startVoiceRecording,
   stopVoiceRecording,
 } from '../lib/voice';
-import { colors, fonts, space, type } from '../theme';
+import { colors, fonts, radii, space, type } from '../theme';
 
 type Props = {
   recipient: string;
@@ -114,41 +115,43 @@ export function SealScreen({
           />
           <Text style={styles.heading}>Leave a note</Text>
           <Text style={styles.support}>A few words they can keep close.</Text>
-          <View style={styles.fields}>
-            <Field
-              label="For"
-              value={recipient}
-              onChangeText={onChangeRecipient}
-              placeholder="Someone special"
-              maxLength={60}
-            />
-            <Field
-              label="Message"
-              value={message}
-              onChangeText={onChangeMessage}
-              placeholder="Write what you want them to remember…"
-              maxLength={1000}
-              multiline
-            />
-            <Field
-              label="From"
-              value={from}
-              onChangeText={onChangeFrom}
-              placeholder="Your name"
-              maxLength={60}
-            />
-            <VoiceRow
-              recording={recording}
-              recordSec={recordSec}
-              voiceUri={voiceUri}
-              voiceDurationSec={voiceDurationSec}
-              error={error}
-              onToggle={() => void toggleRecord()}
-              onClear={() => onChangeVoice(undefined, undefined)}
-            />
+          <View style={styles.slab}>
+            <View style={styles.fields}>
+              <Field
+                label="For"
+                value={recipient}
+                onChangeText={onChangeRecipient}
+                placeholder="Someone special"
+                maxLength={60}
+              />
+              <Field
+                label="Message"
+                value={message}
+                onChangeText={onChangeMessage}
+                placeholder="Write what you want them to remember…"
+                maxLength={1000}
+                multiline
+              />
+              <Field
+                label="From"
+                value={from}
+                onChangeText={onChangeFrom}
+                placeholder="Your name"
+                maxLength={60}
+              />
+              <VoiceRow
+                recording={recording}
+                recordSec={recordSec}
+                voiceUri={voiceUri}
+                voiceDurationSec={voiceDurationSec}
+                error={error}
+                onToggle={() => void toggleRecord()}
+                onClear={() => onChangeVoice(undefined, undefined)}
+              />
+            </View>
           </View>
         </ScrollView>
-        <View style={styles.footer}>
+        <FooterRail style={styles.footer}>
           <Text style={styles.hint}>Your note stays on this device for the demo.</Text>
           <KeepsakeButton
             label="Seal this note"
@@ -156,7 +159,7 @@ export function SealScreen({
             disabled={!canSeal || recording}
             trailing={<ArrowRight size={16} color={colors.cream} />}
           />
-        </View>
+        </FooterRail>
       </View>
     </ScreenEnter>
   );
@@ -164,11 +167,11 @@ export function SealScreen({
 
 const styles = StyleSheet.create({
   body: { flex: 1 },
-  scroll: { paddingTop: 4, paddingBottom: space.md, gap: 4 },
+  scroll: { paddingTop: 2, paddingBottom: space.md, flexGrow: 1 },
   heading: {
     ...type.displayHero,
     color: colors.ink,
-    marginTop: space.md,
+    marginTop: space.sm,
     marginBottom: space.xs,
   },
   support: {
@@ -176,14 +179,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 21,
     color: colors.muteSoft,
-    marginBottom: space.lg,
+    marginBottom: space.md,
+  },
+  slab: {
+    flexGrow: 1,
+    backgroundColor: colors.cream,
+    borderWidth: 1,
+    borderColor: colors.softLine,
+    borderRadius: radii.hair,
+    padding: space.md,
   },
   fields: { gap: space.lg },
   footer: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: space.md,
-    gap: 12,
+    marginHorizontal: -18,
+    paddingHorizontal: 18,
   },
   hint: {
     fontFamily: fonts.sans,

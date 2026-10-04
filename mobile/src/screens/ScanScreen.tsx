@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { ArrowRight, Check, ScanLine } from 'lucide-react-native';
 import { NfcMark } from '../components/NfcMark';
-import { SoftAmbient } from '../components/SoftAmbient';
+import { FooterRail } from '../components/PaperSurface';
 import { GhostLink, KeepsakeButton } from '../components/ui';
 import { NATIVE_DRIVER } from '../lib/motion';
 import { colors, fonts, radii, space, timing, type } from '../theme';
@@ -186,7 +186,6 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
 
   return (
     <View style={styles.body}>
-      <SoftAmbient />
       <View style={styles.main}>
         <View style={styles.stage}>
           <Animated.View style={[styles.ring, styles.ringOuter, activeRing]} />
@@ -197,7 +196,7 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
             />
           ) : null}
           <Animated.View style={[styles.tag, { transform: [{ scale: tagScale }] }]}>
-            <NfcMark size={32} />
+            <NfcMark size={34} />
             {phase === 'found' ? (
               <Animated.View style={[styles.success, { opacity: checkOpacity }]}>
                 <Check size={12} color={colors.cream} strokeWidth={2.5} />
@@ -205,12 +204,14 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
             ) : null}
           </Animated.View>
         </View>
-        <Animated.View style={{ opacity: copyOpacity, alignItems: 'center' }}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+        <Animated.View style={styles.copy}>
+          <Animated.View style={{ opacity: copyOpacity, alignItems: 'center' }}>
+            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.subtitle}>{subtitle}</Text>
+          </Animated.View>
         </Animated.View>
       </View>
-      <View style={styles.footer}>
+      <FooterRail style={styles.footer}>
         <KeepsakeButton
           label={cta}
           onPress={onDemoTag}
@@ -219,26 +220,25 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
           trailing={<ArrowRight size={17} color={colors.cream} />}
         />
         <GhostLink label="Leave a note" onPress={onLeaveNote} />
-      </View>
+      </FooterRail>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  body: { flex: 1, position: 'relative' },
+  body: { flex: 1 },
   main: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
-    zIndex: 1,
+    paddingHorizontal: 4,
   },
   stage: {
-    width: 204,
-    height: 204,
+    width: 228,
+    height: 228,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: space.xl,
+    marginBottom: space.lg,
   },
   ring: {
     position: 'absolute',
@@ -247,19 +247,19 @@ const styles = StyleSheet.create({
     borderColor: colors.softLine,
   },
   ringOuter: {
-    width: 192,
-    height: 192,
+    width: 216,
+    height: 216,
   },
   ringInner: {
-    width: 136,
-    height: 136,
+    width: 152,
+    height: 152,
     borderColor: colors.border,
-    opacity: 0.72,
+    opacity: 0.75,
   },
   sweep: {
     position: 'absolute',
-    width: 192,
-    height: 192,
+    width: 216,
+    height: 216,
     borderRadius: radii.pill,
     borderWidth: 1.5,
     borderColor: 'transparent',
@@ -267,8 +267,8 @@ const styles = StyleSheet.create({
     borderRightColor: `${colors.ink}33`,
   },
   tag: {
-    width: 74,
-    height: 74,
+    width: 78,
+    height: 78,
     borderRadius: radii.tag,
     borderWidth: 1,
     borderColor: colors.border,
@@ -287,6 +287,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  copy: {
+    minHeight: 110,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
   title: {
     ...type.displayTitle,
     color: colors.ink,
@@ -299,14 +304,11 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: colors.muteSoft,
     textAlign: 'center',
-    maxWidth: 260,
+    maxWidth: 280,
   },
   footer: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: space.md,
-    gap: space.xs,
+    marginHorizontal: -18,
+    paddingHorizontal: 18,
     alignItems: 'center',
-    zIndex: 1,
   },
 });

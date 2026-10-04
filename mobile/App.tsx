@@ -5,6 +5,8 @@ import { useFonts, DMSans_400Regular, DMSans_600SemiBold } from '@expo-google-fo
 import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
 import * as SplashScreen from 'expo-splash-screen';
 import { NfcMark } from './src/components/NfcMark';
+import { PaperSurface } from './src/components/PaperSurface';
+import { SoftAmbient } from './src/components/SoftAmbient';
 import { AppHeader } from './src/components/ui';
 import { ScanScreen } from './src/screens/ScanScreen';
 import { SealScreen } from './src/screens/SealScreen';
@@ -127,52 +129,63 @@ export default function App() {
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar style="dark" />
-      <AppHeader
-        mark={<NfcMark size={22} />}
-        onHome={() => moveTo('scan')}
-        onNewNote={() => moveTo('seal')}
-      />
-      <View style={styles.experience}>
-        <View style={styles.stepRow}>
-          <View style={[styles.stepDot, stepLive && styles.stepDotLive]} />
-          <Text style={styles.step}>{stepLabel(screen, scanPhase)}</Text>
+      <SoftAmbient />
+      <View style={styles.shell}>
+        <AppHeader
+          mark={<NfcMark size={22} />}
+          onHome={() => moveTo('scan')}
+          onNewNote={() => moveTo('seal')}
+        />
+        <View style={styles.experience}>
+          <View style={styles.stepRow}>
+            <View style={[styles.stepDot, stepLive && styles.stepDotLive]} />
+            <Text style={styles.step}>{stepLabel(screen, scanPhase)}</Text>
+          </View>
+          <PaperSurface>
+            <View style={styles.panel}>
+              {screen === 'scan' && (
+                <ScanScreen
+                  phase={scanPhase}
+                  onDemoTag={useDemoTag}
+                  onLeaveNote={() => moveTo('seal')}
+                />
+              )}
+              {screen === 'seal' && (
+                <SealScreen
+                  recipient={recipient}
+                  message={message}
+                  from={from}
+                  voiceUri={voiceUri}
+                  voiceDurationSec={voiceDurationSec}
+                  onChangeRecipient={setRecipient}
+                  onChangeMessage={setMessage}
+                  onChangeFrom={setFrom}
+                  onChangeVoice={(uri, sec) => {
+                    setVoiceUri(uri);
+                    setVoiceDurationSec(sec);
+                  }}
+                  onBack={() => moveTo('scan')}
+                  onSeal={sealNote}
+                />
+              )}
+              {screen === 'locked' && (
+                <LockedScreen
+                  note={note}
+                  opening={opening}
+                  onOpen={openNote}
+                  onBack={() => moveTo('scan')}
+                />
+              )}
+              {screen === 'reveal' && (
+                <RevealScreen
+                  note={note}
+                  onStartAgain={() => moveTo('scan')}
+                  onNewNote={() => moveTo('seal')}
+                />
+              )}
+            </View>
+          </PaperSurface>
         </View>
-        {screen === 'scan' && (
-          <ScanScreen phase={scanPhase} onDemoTag={useDemoTag} onLeaveNote={() => moveTo('seal')} />
-        )}
-        {screen === 'seal' && (
-          <SealScreen
-            recipient={recipient}
-            message={message}
-            from={from}
-            voiceUri={voiceUri}
-            voiceDurationSec={voiceDurationSec}
-            onChangeRecipient={setRecipient}
-            onChangeMessage={setMessage}
-            onChangeFrom={setFrom}
-            onChangeVoice={(uri, sec) => {
-              setVoiceUri(uri);
-              setVoiceDurationSec(sec);
-            }}
-            onBack={() => moveTo('scan')}
-            onSeal={sealNote}
-          />
-        )}
-        {screen === 'locked' && (
-          <LockedScreen
-            note={note}
-            opening={opening}
-            onOpen={openNote}
-            onBack={() => moveTo('scan')}
-          />
-        )}
-        {screen === 'reveal' && (
-          <RevealScreen
-            note={note}
-            onStartAgain={() => moveTo('scan')}
-            onNewNote={() => moveTo('seal')}
-          />
-        )}
       </View>
     </SafeAreaView>
   );
@@ -183,10 +196,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.cream,
   },
+  shell: {
+    flex: 1,
+    zIndex: 1,
+  },
   experience: {
     flex: 1,
-    paddingHorizontal: 26,
-    paddingBottom: space.lg,
+    paddingHorizontal: 18,
+    paddingBottom: space.md,
+  },
+  panel: {
+    flex: 1,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 12,
   },
   stepRow: {
     flexDirection: 'row',
@@ -194,6 +217,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: space.sm,
     minHeight: 18,
+    paddingHorizontal: 4,
   },
   stepDot: {
     width: 6,
