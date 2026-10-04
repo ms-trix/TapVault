@@ -15,66 +15,58 @@ type Props = {
 };
 
 export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
-  const outerPulse = useRef(new Animated.Value(0)).current;
-  const innerPulse = useRef(new Animated.Value(0)).current;
-  const fill = useRef(new Animated.Value(0)).current;
-  const spin = useRef(new Animated.Value(0)).current;
+  const ringPulse = useRef(new Animated.Value(0)).current;
+  const sweep = useRef(new Animated.Value(0)).current;
+  const ringSettle = useRef(new Animated.Value(0)).current;
   const tagScale = useRef(new Animated.Value(1)).current;
-  const ripple = useRef(new Animated.Value(0)).current;
+  const checkOpacity = useRef(new Animated.Value(0)).current;
   const active = useRef<Animated.CompositeAnimation[]>([]);
 
   useEffect(() => {
     active.current.forEach((a) => a.stop());
     active.current = [];
 
-    outerPulse.setValue(0);
-    innerPulse.setValue(0);
-    fill.setValue(0);
-    spin.setValue(0);
-    ripple.setValue(0);
+    ringPulse.setValue(0);
+    sweep.setValue(0);
+    ringSettle.setValue(phase === 'found' ? 1 : 0);
     tagScale.setValue(1);
+    checkOpacity.setValue(0);
 
     if (phase === 'listening') {
-      const breathe = (value: Animated.Value, duration: number, delay = 0) =>
-        Animated.loop(
-          Animated.sequence([
-            Animated.delay(delay),
-            Animated.timing(value, {
-              toValue: 1,
-              duration: duration / 2,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: NATIVE_DRIVER,
-            }),
-            Animated.timing(value, {
-              toValue: 0,
-              duration: duration / 2,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: NATIVE_DRIVER,
-            }),
-          ]),
-        );
-
-      const outer = breathe(outerPulse, 4200);
-      const inner = breathe(innerPulse, 4200, 350);
-      const tag = Animated.loop(
+      const ring = Animated.loop(
         Animated.sequence([
-          Animated.timing(tagScale, {
-            toValue: 1.05,
-            duration: 1500,
+          Animated.timing(ringPulse, {
+            toValue: 1,
+            duration: 2200,
             easing: Easing.inOut(Easing.sin),
             useNativeDriver: NATIVE_DRIVER,
           }),
-          Animated.timing(tagScale, {
-            toValue: 1,
-            duration: 1500,
+          Animated.timing(ringPulse, {
+            toValue: 0,
+            duration: 2200,
             easing: Easing.inOut(Easing.sin),
             useNativeDriver: NATIVE_DRIVER,
           }),
         ]),
       );
-      active.current = [outer, inner, tag];
-      outer.start();
-      inner.start();
+      const tag = Animated.loop(
+        Animated.sequence([
+          Animated.timing(tagScale, {
+            toValue: 1.02,
+            duration: 2200,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: NATIVE_DRIVER,
+          }),
+          Animated.timing(tagScale, {
+            toValue: 1,
+            duration: 2200,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: NATIVE_DRIVER,
+          }),
+        ]),
+      );
+      active.current = [ring, tag];
+      ring.start();
       tag.start();
       return () => active.current.forEach((a) => a.stop());
     }
@@ -82,160 +74,120 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
     if (phase === 'detecting') {
       const duration = timing.detectMs;
       const run = Animated.parallel([
-        Animated.timing(fill, {
+        Animated.timing(sweep, {
           toValue: 1,
           duration,
-          easing: Easing.out(Easing.cubic),
+          easing: Easing.bezier(0.22, 0.72, 0.28, 1),
           useNativeDriver: NATIVE_DRIVER,
         }),
-        Animated.timing(spin, {
+        Animated.timing(ringSettle, {
           toValue: 1,
-          duration,
-          easing: Easing.bezier(0.2, 0.7, 0.25, 1),
+          duration: duration * 0.85,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: NATIVE_DRIVER,
         }),
         Animated.sequence([
           Animated.timing(tagScale, {
-            toValue: 0.92,
-            duration: duration * 0.35,
-            easing: Easing.inOut(Easing.quad),
-            useNativeDriver: NATIVE_DRIVER,
-          }),
-          Animated.timing(tagScale, {
-            toValue: 0.92,
-            duration: duration * 0.37,
+            toValue: 0.97,
+            duration: 180,
+            easing: Easing.out(Easing.quad),
             useNativeDriver: NATIVE_DRIVER,
           }),
           Animated.timing(tagScale, {
             toValue: 1,
-            duration: duration * 0.28,
+            duration: duration - 180,
+            easing: Easing.out(Easing.cubic),
             useNativeDriver: NATIVE_DRIVER,
           }),
         ]),
-        Animated.timing(ripple, {
-          toValue: 1,
-          duration,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: NATIVE_DRIVER,
-        }),
       ]);
       active.current = [run];
       run.start();
       return () => active.current.forEach((a) => a.stop());
     }
 
-    // found — rings stay filled; tag pops
-    fill.setValue(1);
-    const pop = Animated.spring(tagScale, {
-      toValue: 1.06,
-      friction: 7,
-      tension: 80,
-      useNativeDriver: NATIVE_DRIVER,
-    });
-    active.current = [pop];
-    pop.start();
+    // found
+    ringSettle.setValue(1);
+    const settle = Animated.parallel([
+      Animated.timing(tagScale, {
+        toValue: 1.03,
+        duration: 320,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: NATIVE_DRIVER,
+      }),
+      Animated.timing(checkOpacity, {
+        toValue: 1,
+        duration: 280,
+        delay: 60,
+        useNativeDriver: NATIVE_DRIVER,
+      }),
+    ]);
+    active.current = [settle];
+    settle.start();
     return () => active.current.forEach((a) => a.stop());
-  }, [phase, outerPulse, innerPulse, fill, spin, tagScale, ripple]);
+  }, [phase, ringPulse, sweep, ringSettle, tagScale, checkOpacity]);
 
-  const listeningScale = (v: Animated.Value) =>
-    v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.025] });
-  const listeningOpacity = (v: Animated.Value) =>
-    v.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] });
-
-  const fillScale = fill.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.92, 1.015, 1],
-  });
-  const fillOpacity = fill.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.25, 1, 1],
-  });
-
-  const rotate = spin.interpolate({
+  const ringOpacity = ringPulse.interpolate({
     inputRange: [0, 1],
-    outputRange: ['-120deg', '520deg'],
+    outputRange: [0.35, 0.85],
   });
-  const traceOpacity = spin.interpolate({
-    inputRange: [0, 0.14, 0.86, 1],
-    outputRange: [0, 1, 1, 0],
+  const ringScale = ringPulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.012],
   });
 
-  const rippleScale = ripple.interpolate({
+  const settleOpacity = ringSettle.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 1.8],
+    outputRange: [0.4, 1],
   });
-  const rippleOpacity = ripple.interpolate({
-    inputRange: [0, 0.12, 1],
-    outputRange: [0, 0.7, 0],
+
+  const rotate = sweep.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['-90deg', '270deg'],
+  });
+  const sweepOpacity = sweep.interpolate({
+    inputRange: [0, 0.08, 0.88, 1],
+    outputRange: [0, 0.9, 0.9, 0],
   });
 
   const title =
-    phase === 'found' ? 'Note found.' : phase === 'detecting' ? 'Reading the tag…' : 'Hold a tag\nto your phone.';
+    phase === 'found'
+      ? 'Note found.'
+      : phase === 'detecting'
+        ? 'Reading…'
+        : 'Hold a tag\nto your phone.';
   const subtitle =
     phase === 'found'
-      ? 'Ready to open.'
+      ? 'A sealed note is ready.'
       : phase === 'detecting'
-        ? 'Finding the note inside.'
-        : 'A little note, waiting to be opened.';
+        ? 'Opening the keepsake on this tag.'
+        : 'Bring a TapVault tag close — or simulate one below.';
   const cta =
-    phase === 'found' ? 'Tag found' : phase === 'detecting' ? 'Reading tag…' : 'Use demo tag';
+    phase === 'found' ? 'Opening…' : phase === 'detecting' ? 'Reading…' : 'Tap to simulate';
+
+  const activeRing =
+    phase === 'listening'
+      ? { opacity: ringOpacity, transform: [{ scale: ringScale }] }
+      : { opacity: settleOpacity };
 
   return (
     <View style={styles.body}>
       <SoftAmbient />
       <View style={styles.main}>
         <View style={styles.stage}>
-          <Animated.View
-            style={[
-              styles.orbit,
-              styles.orbitOuter,
-              phase === 'listening' && {
-                transform: [{ scale: listeningScale(outerPulse) }],
-                opacity: listeningOpacity(outerPulse),
-              },
-              phase === 'detecting' && {
-                transform: [{ scale: fillScale }],
-                opacity: fillOpacity,
-                borderColor: colors.ink,
-              },
-              phase === 'found' && { borderColor: colors.ink, opacity: 1 },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.orbit,
-              styles.orbitInner,
-              phase === 'listening' && {
-                transform: [{ scale: listeningScale(innerPulse) }],
-                opacity: listeningOpacity(innerPulse),
-              },
-              phase === 'detecting' && {
-                transform: [{ scale: fillScale }],
-                opacity: fillOpacity,
-                borderColor: colors.ink,
-              },
-              phase === 'found' && { borderColor: colors.butterDeep, opacity: 1 },
-            ]}
-          />
+          <Animated.View style={[styles.ring, styles.ringOuter, activeRing]} />
+          <View style={[styles.ring, styles.ringInner]} />
           {phase === 'detecting' ? (
             <Animated.View
-              style={[styles.trace, { opacity: traceOpacity, transform: [{ rotate }] }]}
+              style={[styles.sweep, { opacity: sweepOpacity, transform: [{ rotate }] }]}
             />
           ) : null}
-          <Animated.View style={[styles.tag, { transform: [{ rotate: '-6deg' }, { scale: tagScale }] }]}>
-            {phase === 'detecting' ? (
-              <Animated.View
-                style={[
-                  styles.ripple,
-                  { opacity: rippleOpacity, transform: [{ scale: rippleScale }] },
-                ]}
-              />
-            ) : null}
-            <NfcMark size={34} />
+          <Animated.View style={[styles.tag, { transform: [{ scale: tagScale }] }]}>
+            <NfcMark size={32} />
             {phase === 'found' ? (
-              <View style={styles.success}>
-                <Check size={14} color={colors.cream} />
-              </View>
+              <Animated.View style={[styles.success, { opacity: checkOpacity }]}>
+                <Check size={12} color={colors.cream} strokeWidth={2.5} />
+              </Animated.View>
             ) : null}
           </Animated.View>
         </View>
@@ -247,10 +199,10 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
           label={cta}
           onPress={onDemoTag}
           disabled={phase !== 'listening'}
-          leading={<ScanLine size={18} color={colors.cream} />}
-          trailing={<ArrowRight size={18} color={colors.cream} />}
+          leading={<ScanLine size={17} color={colors.cream} />}
+          trailing={<ArrowRight size={17} color={colors.cream} />}
         />
-        <GhostLink label="Leave a note →" onPress={onLeaveNote} />
+        <GhostLink label="Leave a note" onPress={onLeaveNote} />
       </View>
     </View>
   );
@@ -262,87 +214,84 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     zIndex: 1,
   },
   stage: {
-    width: 240,
-    height: 240,
+    width: 200,
+    height: 200,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 28,
+    marginBottom: 32,
   },
-  orbit: {
+  ring: {
     position: 'absolute',
     borderRadius: 999,
     borderWidth: 1,
+    borderColor: colors.softLine,
+  },
+  ringOuter: {
+    width: 188,
+    height: 188,
+  },
+  ringInner: {
+    width: 132,
+    height: 132,
     borderColor: colors.border,
+    opacity: 0.7,
   },
-  orbitOuter: { width: '98%', height: '98%' },
-  orbitInner: {
-    width: '72%',
-    height: '72%',
-    borderStyle: 'dashed',
-    borderColor: colors.butterDeep,
-  },
-  trace: {
+  sweep: {
     position: 'absolute',
-    width: '98%',
-    height: '98%',
+    width: 188,
+    height: 188,
     borderRadius: 999,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: 'transparent',
     borderTopColor: colors.ink,
+    borderRightColor: `${colors.ink}33`,
   },
   tag: {
-    width: 68,
-    height: 68,
-    borderRadius: 14,
+    width: 72,
+    height: 72,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.butter,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ripple: {
-    position: 'absolute',
-    width: 88,
-    height: 88,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.butterDeep,
-  },
   success: {
     position: 'absolute',
-    top: -8,
-    right: -8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    top: -6,
+    right: -6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     fontFamily: 'Georgia',
-    fontSize: 40,
-    lineHeight: 44,
+    fontSize: 36,
+    lineHeight: 40,
     color: colors.ink,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
+    letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 13,
-    lineHeight: 21,
+    lineHeight: 20,
     color: colors.muteSoft,
     textAlign: 'center',
-    maxWidth: 270,
+    maxWidth: 260,
   },
   footer: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
     paddingTop: 20,
-    gap: 10,
+    gap: 8,
     alignItems: 'center',
     zIndex: 1,
   },

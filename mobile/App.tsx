@@ -18,13 +18,13 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 function stepLabel(screen: Screen, scanPhase: ScanPhase) {
   if (screen === 'scan') {
-    if (scanPhase === 'found') return 'Demo tag found';
-    if (scanPhase === 'detecting') return 'Reading demo tag';
-    return 'Demo scan';
+    if (scanPhase === 'found') return 'Tag found';
+    if (scanPhase === 'detecting') return 'Reading tag';
+    return 'Waiting for a tag';
   }
-  if (screen === 'seal') return 'A new note';
-  if (screen === 'locked') return 'A sealed note';
-  return 'A moment to keep';
+  if (screen === 'seal') return 'Write a note';
+  if (screen === 'locked') return 'Sealed note';
+  return 'Opened note';
 }
 
 export default function App() {
@@ -165,6 +165,7 @@ const styles = StyleSheet.create({
   step: {
     fontSize: 11,
     color: colors.muteSoft,
-    marginBottom: 12,
+    marginBottom: 10,
+    letterSpacing: 0.2,
   },
 });

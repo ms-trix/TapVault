@@ -220,10 +220,10 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   brandSub: {
-    marginTop: 4,
-    fontSize: 10,
+    marginTop: 2,
+    fontSize: 11,
     color: colors.muteSoft,
-    letterSpacing: 1,
+    letterSpacing: 0.2,
   },
   plusHit: {
     width: 36,

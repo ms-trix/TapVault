@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: colors.butter,
   },
-  a: { width: 140, height: 140, left: -24, top: 48, opacity: 0.16 },
-  b: { width: 110, height: 110, right: -18, top: 220, opacity: 0.12 },
-  c: { width: 90, height: 90, left: 120, bottom: 40, opacity: 0.1 },
+  a: { width: 160, height: 160, left: -36, top: 40, opacity: 0.1 },
+  b: { width: 120, height: 120, right: -28, top: 210, opacity: 0.08 },
+  c: { width: 100, height: 100, left: 130, bottom: 36, opacity: 0.06 },
 });
