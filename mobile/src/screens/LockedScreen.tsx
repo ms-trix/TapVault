@@ -74,27 +74,25 @@ export function LockedScreen({ note, opening, onOpen, onBack }: Props) {
           { opacity, transform: [{ translateY: rise }] },
         ]}
       >
-        <View style={styles.column}>
-          <View style={styles.meta}>
-            <Text style={styles.metaText}>
-              For {note.recipient} · From {note.from}
-            </Text>
-          </View>
-          <Animated.View
-            style={[
-              styles.emblem,
-              { transform: [{ rotate: '-4deg' }, { scale: emblemScale }] },
-            ]}
-          >
-            <View style={styles.emblemInner}>
-              <NfcMark size={52} />
-            </View>
-          </Animated.View>
-          <Text style={styles.title}>Still sealed.</Text>
-          <Text style={styles.teaser}>
-            A few words are waiting here, just for {note.recipient}.
+        <View style={styles.meta}>
+          <Text style={styles.metaText}>
+            For {note.recipient} · From {note.from}
           </Text>
         </View>
+        <Animated.View
+          style={[
+            styles.emblem,
+            { transform: [{ rotate: '-4deg' }, { scale: emblemScale }] },
+          ]}
+        >
+          <View style={styles.emblemInner}>
+            <NfcMark size={52} />
+          </View>
+        </Animated.View>
+        <Text style={styles.title}>Still sealed.</Text>
+        <Text style={styles.teaser}>
+          A few words are waiting here, just for {note.recipient}.
+        </Text>
       </Animated.View>
       <Animated.View style={{ opacity }}>
         <FooterRail style={styles.footer}>
@@ -123,16 +121,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  column: {
-    width: '100%',
-    alignItems: 'center',
-    paddingVertical: space.lg,
     paddingHorizontal: 8,
-    backgroundColor: colors.cream,
-    borderWidth: 1,
-    borderColor: colors.softLine,
-    borderRadius: radii.hair,
   },
   meta: {
     borderWidth: 1,
@@ -182,8 +171,8 @@ const styles = StyleSheet.create({
     paddingBottom: space.sm,
   },
   footer: {
-    marginHorizontal: -18,
-    paddingHorizontal: 18,
+    marginHorizontal: -26,
+    paddingHorizontal: 26,
     alignItems: 'center',
   },
   readyRow: {

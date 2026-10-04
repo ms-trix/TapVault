@@ -11,7 +11,7 @@ import {
   startVoiceRecording,
   stopVoiceRecording,
 } from '../lib/voice';
-import { colors, fonts, radii, space, type } from '../theme';
+import { colors, fonts, space, type } from '../theme';
 
 type Props = {
   recipient: string;
@@ -115,40 +115,38 @@ export function SealScreen({
           />
           <Text style={styles.heading}>Leave a note</Text>
           <Text style={styles.support}>A few words they can keep close.</Text>
-          <View style={styles.slab}>
-            <View style={styles.fields}>
-              <Field
-                label="For"
-                value={recipient}
-                onChangeText={onChangeRecipient}
-                placeholder="Someone special"
-                maxLength={60}
-              />
-              <Field
-                label="Message"
-                value={message}
-                onChangeText={onChangeMessage}
-                placeholder="Write what you want them to remember…"
-                maxLength={1000}
-                multiline
-              />
-              <Field
-                label="From"
-                value={from}
-                onChangeText={onChangeFrom}
-                placeholder="Your name"
-                maxLength={60}
-              />
-              <VoiceRow
-                recording={recording}
-                recordSec={recordSec}
-                voiceUri={voiceUri}
-                voiceDurationSec={voiceDurationSec}
-                error={error}
-                onToggle={() => void toggleRecord()}
-                onClear={() => onChangeVoice(undefined, undefined)}
-              />
-            </View>
+          <View style={styles.fields}>
+            <Field
+              label="For"
+              value={recipient}
+              onChangeText={onChangeRecipient}
+              placeholder="Someone special"
+              maxLength={60}
+            />
+            <Field
+              label="Message"
+              value={message}
+              onChangeText={onChangeMessage}
+              placeholder="Write what you want them to remember…"
+              maxLength={1000}
+              multiline
+            />
+            <Field
+              label="From"
+              value={from}
+              onChangeText={onChangeFrom}
+              placeholder="Your name"
+              maxLength={60}
+            />
+            <VoiceRow
+              recording={recording}
+              recordSec={recordSec}
+              voiceUri={voiceUri}
+              voiceDurationSec={voiceDurationSec}
+              error={error}
+              onToggle={() => void toggleRecord()}
+              onClear={() => onChangeVoice(undefined, undefined)}
+            />
           </View>
         </ScrollView>
         <FooterRail style={styles.footer}>
@@ -181,18 +179,10 @@ const styles = StyleSheet.create({
     color: colors.muteSoft,
     marginBottom: space.md,
   },
-  slab: {
-    flexGrow: 1,
-    backgroundColor: colors.cream,
-    borderWidth: 1,
-    borderColor: colors.softLine,
-    borderRadius: radii.hair,
-    padding: space.md,
-  },
   fields: { gap: space.lg },
   footer: {
-    marginHorizontal: -18,
-    paddingHorizontal: 18,
+    marginHorizontal: -26,
+    paddingHorizontal: 26,
   },
   hint: {
     fontFamily: fonts.sans,

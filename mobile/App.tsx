@@ -5,7 +5,6 @@ import { useFonts, DMSans_400Regular, DMSans_600SemiBold } from '@expo-google-fo
 import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
 import * as SplashScreen from 'expo-splash-screen';
 import { NfcMark } from './src/components/NfcMark';
-import { PaperSurface } from './src/components/PaperSurface';
 import { SoftAmbient } from './src/components/SoftAmbient';
 import { AppHeader } from './src/components/ui';
 import { ScanScreen } from './src/screens/ScanScreen';
@@ -141,50 +140,46 @@ export default function App() {
             <View style={[styles.stepDot, stepLive && styles.stepDotLive]} />
             <Text style={styles.step}>{stepLabel(screen, scanPhase)}</Text>
           </View>
-          <PaperSurface>
-            <View style={styles.panel}>
-              {screen === 'scan' && (
-                <ScanScreen
-                  phase={scanPhase}
-                  onDemoTag={useDemoTag}
-                  onLeaveNote={() => moveTo('seal')}
-                />
-              )}
-              {screen === 'seal' && (
-                <SealScreen
-                  recipient={recipient}
-                  message={message}
-                  from={from}
-                  voiceUri={voiceUri}
-                  voiceDurationSec={voiceDurationSec}
-                  onChangeRecipient={setRecipient}
-                  onChangeMessage={setMessage}
-                  onChangeFrom={setFrom}
-                  onChangeVoice={(uri, sec) => {
-                    setVoiceUri(uri);
-                    setVoiceDurationSec(sec);
-                  }}
-                  onBack={() => moveTo('scan')}
-                  onSeal={sealNote}
-                />
-              )}
-              {screen === 'locked' && (
-                <LockedScreen
-                  note={note}
-                  opening={opening}
-                  onOpen={openNote}
-                  onBack={() => moveTo('scan')}
-                />
-              )}
-              {screen === 'reveal' && (
-                <RevealScreen
-                  note={note}
-                  onStartAgain={() => moveTo('scan')}
-                  onNewNote={() => moveTo('seal')}
-                />
-              )}
-            </View>
-          </PaperSurface>
+          {screen === 'scan' && (
+            <ScanScreen
+              phase={scanPhase}
+              onDemoTag={useDemoTag}
+              onLeaveNote={() => moveTo('seal')}
+            />
+          )}
+          {screen === 'seal' && (
+            <SealScreen
+              recipient={recipient}
+              message={message}
+              from={from}
+              voiceUri={voiceUri}
+              voiceDurationSec={voiceDurationSec}
+              onChangeRecipient={setRecipient}
+              onChangeMessage={setMessage}
+              onChangeFrom={setFrom}
+              onChangeVoice={(uri, sec) => {
+                setVoiceUri(uri);
+                setVoiceDurationSec(sec);
+              }}
+              onBack={() => moveTo('scan')}
+              onSeal={sealNote}
+            />
+          )}
+          {screen === 'locked' && (
+            <LockedScreen
+              note={note}
+              opening={opening}
+              onOpen={openNote}
+              onBack={() => moveTo('scan')}
+            />
+          )}
+          {screen === 'reveal' && (
+            <RevealScreen
+              note={note}
+              onStartAgain={() => moveTo('scan')}
+              onNewNote={() => moveTo('seal')}
+            />
+          )}
         </View>
       </View>
     </SafeAreaView>
@@ -202,14 +197,8 @@ const styles = StyleSheet.create({
   },
   experience: {
     flex: 1,
-    paddingHorizontal: 18,
-    paddingBottom: space.md,
-  },
-  panel: {
-    flex: 1,
-    paddingHorizontal: 18,
-    paddingTop: 14,
-    paddingBottom: 12,
+    paddingHorizontal: 26,
+    paddingBottom: space.lg,
   },
   stepRow: {
     flexDirection: 'row',
@@ -217,7 +206,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: space.sm,
     minHeight: 18,
-    paddingHorizontal: 4,
   },
   stepDot: {
     width: 6,

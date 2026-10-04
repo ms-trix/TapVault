@@ -307,8 +307,8 @@ const styles = StyleSheet.create({
     maxWidth: 280,
   },
   footer: {
-    marginHorizontal: -18,
-    paddingHorizontal: 18,
+    marginHorizontal: -26,
+    paddingHorizontal: 26,
     alignItems: 'center',
   },
 });
