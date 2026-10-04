@@ -1,11 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { ArrowLeft, Plus, Square } from 'lucide-react-native';
 import { FooterRail } from '../components/PaperSurface';
 import { KeepsakeButton, QuietButton } from '../components/ui';
 import { NATIVE_DRIVER } from '../lib/motion';
 import { formatDuration, playVoice, stopVoicePlayback } from '../lib/voice';
-import { colors, fonts, radii, space, type } from '../theme';
+import { colors, fonts, radii, space, surface, type } from '../theme';
 import type { Note } from '../types';
 
 type Props = {
@@ -15,18 +24,20 @@ type Props = {
 };
 
 export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
-  const letter = useRef(new Animated.Value(0)).current;
+  const letterAnim = useRef(new Animated.Value(0)).current;
   const [playing, setPlaying] = useState(false);
+  const { width } = useWindowDimensions();
+  const letterMax = Math.min(440, Math.max(280, width - 52));
 
   useEffect(() => {
-    letter.setValue(0);
-    Animated.timing(letter, {
+    letterAnim.setValue(0);
+    Animated.timing(letterAnim, {
       toValue: 1,
-      duration: 480,
+      duration: 420,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: NATIVE_DRIVER,
     }).start();
-  }, [letter, note.recipient, note.message]);
+  }, [letterAnim, note.recipient, note.message]);
 
   useEffect(
     () => () => {
@@ -52,54 +63,64 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
 
   return (
     <View style={styles.body}>
-      <ScrollView contentContainerStyle={styles.main} style={styles.scroll}>
-        <Text style={styles.kicker}>From {note.from}</Text>
-        <Text style={styles.heading}>For {note.recipient}.</Text>
-        <Animated.View
-          style={[
-            styles.letter,
-            {
-              opacity: letter,
-              transform: [
-                {
-                  translateY: letter.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [14, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <Text style={styles.message}>{note.message}</Text>
-          <View style={styles.letterFoot}>
-            <Text style={styles.signature}>{note.from}</Text>
-            {note.voiceUri ? (
-              <View style={styles.voice}>
-                <Pressable
-                  onPress={() => void toggleVoice()}
-                  style={({ pressed }) => [styles.play, pressed && styles.playPressed]}
-                  accessibilityRole="button"
-                  accessibilityLabel={playing ? 'Stop voice note' : 'Play voice note'}
-                >
-                  {playing ? (
-                    <Square size={14} color={colors.cream} />
-                  ) : (
-                    <Text style={styles.playTriangle}>▶</Text>
-                  )}
-                </Pressable>
-                <View>
-                  <Text style={styles.voiceTitle}>Voice note</Text>
-                  <Text style={styles.voiceMeta}>
-                    {formatDuration(note.voiceDurationSec ?? 0)}
-                  </Text>
+      <ScrollView
+        contentContainerStyle={styles.main}
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.column, { maxWidth: letterMax }]}>
+          <Text style={styles.from}>From {note.from}</Text>
+          <Text style={styles.heading}>For {note.recipient}.</Text>
+
+          <Animated.View
+            style={[
+              styles.letter,
+              {
+                opacity: letterAnim,
+                transform: [
+                  {
+                    translateY: letterAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [12, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <View style={styles.letterEdge} />
+            <View style={styles.letterBody}>
+              <Text style={styles.message}>{note.message}</Text>
+              <Text style={styles.signature}>{note.from}</Text>
+              {note.voiceUri ? (
+                <View style={styles.voice}>
+                  <Pressable
+                    onPress={() => void toggleVoice()}
+                    style={({ pressed }) => [styles.play, pressed && styles.playPressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel={playing ? 'Stop voice note' : 'Play voice note'}
+                  >
+                    {playing ? (
+                      <Square size={14} color={colors.cream} />
+                    ) : (
+                      <Text style={styles.playTriangle}>▶</Text>
+                    )}
+                  </Pressable>
+                  <View>
+                    <Text style={styles.voiceTitle}>Voice note</Text>
+                    <Text style={styles.voiceMeta}>
+                      {formatDuration(note.voiceDurationSec ?? 0)}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            ) : null}
-          </View>
-        </Animated.View>
-        <Text style={styles.caption}>Opened by holding this gift</Text>
+              ) : null}
+            </View>
+          </Animated.View>
+
+          <Text style={styles.caption}>Opened by holding this gift</Text>
+        </View>
       </ScrollView>
+
       <FooterRail style={styles.footer}>
         <QuietButton
           label="Start again"
@@ -125,53 +146,67 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingTop: space.sm,
     paddingBottom: space.md,
+    alignItems: 'center',
   },
-  kicker: {
-    fontFamily: fonts.sans,
-    fontSize: 12,
-    color: colors.muteSoft,
+  column: {
+    width: '100%',
+    alignSelf: 'center',
+  },
+  from: {
+    fontFamily: fonts.sansSemi,
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.mute,
   },
   heading: {
     ...type.displayHero,
     color: colors.ink,
-    marginTop: space.sm,
+    marginTop: 6,
     marginBottom: space.md,
   },
   letter: {
-    flexGrow: 1,
-    borderWidth: 1,
-    borderColor: colors.softLine,
+    width: '100%',
+    flexDirection: 'row',
     backgroundColor: colors.paper,
-    paddingHorizontal: 26,
-    paddingVertical: 28,
-    minHeight: 340,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radii.hair,
-    justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
+  letterEdge: {
+    width: 4,
+    backgroundColor: surface.edge,
+  },
+  letterBody: {
+    flex: 1,
+    paddingHorizontal: 22,
+    paddingTop: 22,
+    paddingBottom: 20,
   },
   message: {
-    ...type.bodyLarge,
+    fontFamily: fonts.sans,
+    fontSize: 17,
+    lineHeight: 28,
     color: colors.ink,
-  },
-  letterFoot: {
-    marginTop: 36,
   },
   signature: {
     ...type.displaySign,
     color: colors.ink,
+    marginTop: 28,
   },
   voice: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 22,
+    marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: colors.softLine,
   },
   play: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
@@ -182,7 +217,7 @@ const styles = StyleSheet.create({
   },
   playTriangle: {
     color: colors.cream,
-    fontSize: 14,
+    fontSize: 13,
     marginLeft: 2,
     fontFamily: fonts.sans,
   },
