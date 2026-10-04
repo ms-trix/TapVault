@@ -1,42 +1,154 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { useFonts, DMSans_400Regular, DMSans_600SemiBold } from '@expo-google-fonts/dm-sans';
+import * as SplashScreen from 'expo-splash-screen';
+import { NfcMark } from './src/components/NfcMark';
+import { AppHeader } from './src/components/ui';
+import { ScanScreen } from './src/screens/ScanScreen';
+import { SealScreen } from './src/screens/SealScreen';
+import { LockedScreen } from './src/screens/LockedScreen';
+import { RevealScreen } from './src/screens/RevealScreen';
+import { colors, timing } from './src/theme';
+import { demoNote, type Note, type ScanPhase, type Screen } from './src/types';
 
-/** B1.1 shell only — Soft Keepsake screens land in B1.2 */
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+function stepLabel(screen: Screen, scanPhase: ScanPhase) {
+  if (screen === 'scan') {
+    if (scanPhase === 'found') return 'Demo tag found';
+    if (scanPhase === 'detecting') return 'Reading demo tag';
+    return 'Demo scan';
+  }
+  if (screen === 'seal') return 'A new note';
+  if (screen === 'locked') return 'A sealed note';
+  return 'A moment to keep';
+}
+
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    DMSans_400Regular,
+    DMSans_600SemiBold,
+  });
+
+  const [screen, setScreen] = useState<Screen>('scan');
+  const [note, setNote] = useState<Note>(demoNote);
+  const [recipient, setRecipient] = useState('');
+  const [message, setMessage] = useState('');
+  const [from, setFrom] = useState('');
+  const [scanPhase, setScanPhase] = useState<ScanPhase>('listening');
+  const [opening, setOpening] = useState(false);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync().catch(() => undefined);
+    }
+  }, [fontsLoaded]);
+
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  const clearTimers = () => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  };
+
+  const moveTo = useCallback((next: Screen) => {
+    clearTimers();
+    if (next === 'scan') setScanPhase('listening');
+    setOpening(false);
+    setScreen(next);
+  }, []);
+
+  const useDemoTag = () => {
+    if (scanPhase !== 'listening') return;
+    setScanPhase('detecting');
+    setNote(demoNote);
+    timers.current.push(
+      setTimeout(() => setScanPhase('found'), timing.detectMs),
+      setTimeout(() => moveTo('locked'), timing.detectMs + timing.foundHoldMs),
+    );
+  };
+
+  const sealNote = () => {
+    const next: Note = {
+      recipient: recipient.trim(),
+      message: message.trim(),
+      from: from.trim(),
+    };
+    if (!next.recipient || !next.message || !next.from) return;
+    setNote(next);
+    moveTo('locked');
+  };
+
+  const openNote = () => {
+    if (opening) return;
+    setOpening(true);
+    timers.current.push(setTimeout(() => moveTo('reveal'), timing.unlockMs));
+  };
+
+  if (!fontsLoaded) {
+    return <View style={styles.root} />;
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.brand}>TapVault</Text>
-      <Text style={styles.sub}>touch to open</Text>
-      <Text style={styles.meta}>Expo shell ready · next: Soft Keepsake screens</Text>
+    <SafeAreaView style={styles.root}>
       <StatusBar style="dark" />
-    </View>
+      <AppHeader
+        mark={<NfcMark size={22} />}
+        onHome={() => moveTo('scan')}
+        onNewNote={() => moveTo('seal')}
+      />
+      <View style={styles.experience}>
+        <Text style={styles.step}>{stepLabel(screen, scanPhase)}</Text>
+        {screen === 'scan' && (
+          <ScanScreen phase={scanPhase} onDemoTag={useDemoTag} onLeaveNote={() => moveTo('seal')} />
+        )}
+        {screen === 'seal' && (
+          <SealScreen
+            recipient={recipient}
+            message={message}
+            from={from}
+            onChangeRecipient={setRecipient}
+            onChangeMessage={setMessage}
+            onChangeFrom={setFrom}
+            onBack={() => moveTo('scan')}
+            onSeal={sealNote}
+          />
+        )}
+        {screen === 'locked' && (
+          <LockedScreen
+            note={note}
+            opening={opening}
+            onOpen={openNote}
+            onBack={() => moveTo('scan')}
+          />
+        )}
+        {screen === 'reveal' && (
+          <RevealScreen
+            note={note}
+            onStartAgain={() => moveTo('scan')}
+            onNewNote={() => moveTo('seal')}
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: '#faf6eb',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 28,
+    backgroundColor: colors.cream,
   },
-  brand: {
-    fontFamily: 'Georgia',
-    fontSize: 42,
-    color: '#3f392c',
-    letterSpacing: -0.5,
+  experience: {
+    flex: 1,
+    paddingHorizontal: 26,
+    paddingBottom: 24,
   },
-  sub: {
-    marginTop: 8,
-    fontSize: 12,
-    color: '#8a8170',
-    letterSpacing: 1.2,
-  },
-  meta: {
-    marginTop: 28,
-    fontSize: 13,
-    color: '#6f6756',
-    textAlign: 'center',
+  step: {
+    fontSize: 11,
+    color: colors.muteSoft,
+    marginBottom: 12,
   },
 });
