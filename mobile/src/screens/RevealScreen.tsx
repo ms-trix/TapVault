@@ -14,7 +14,7 @@ import { FooterRail } from '../components/PaperSurface';
 import { KeepsakeButton, QuietButton } from '../components/ui';
 import { NATIVE_DRIVER } from '../lib/motion';
 import { formatDuration, playVoice, stopVoicePlayback } from '../lib/voice';
-import { colors, fonts, radii, space, surface, type } from '../theme';
+import { colors, fonts, space, surface, type } from '../theme';
 import type { Note } from '../types';
 
 type Props = {
@@ -26,14 +26,16 @@ type Props = {
 export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
   const letterAnim = useRef(new Animated.Value(0)).current;
   const [playing, setPlaying] = useState(false);
-  const { width } = useWindowDimensions();
-  const letterMax = Math.min(440, Math.max(280, width - 52));
+  const { width, height } = useWindowDimensions();
+  /** Readable measure inside the full-bleed sheet */
+  const measure = Math.min(420, Math.max(260, width - 88));
+  const sheetMin = Math.min(420, Math.max(280, height * 0.42));
 
   useEffect(() => {
     letterAnim.setValue(0);
     Animated.timing(letterAnim, {
       toValue: 1,
-      duration: 420,
+      duration: 440,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: NATIVE_DRIVER,
     }).start();
@@ -68,29 +70,32 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.column, { maxWidth: letterMax }]}>
-          <Text style={styles.from}>From {note.from}</Text>
-          <Text style={styles.heading}>For {note.recipient}.</Text>
+        <Animated.View
+          style={[
+            styles.sheet,
+            {
+              minHeight: sheetMin,
+              opacity: letterAnim,
+              transform: [
+                {
+                  translateY: letterAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [10, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <View style={styles.sheetTop} />
+          <View style={[styles.measure, { maxWidth: measure }]}>
+            <Text style={styles.from}>From {note.from}</Text>
+            <Text style={styles.greeting}>For {note.recipient}.</Text>
+            <Text style={styles.message}>{note.message}</Text>
 
-          <Animated.View
-            style={[
-              styles.letter,
-              {
-                opacity: letterAnim,
-                transform: [
-                  {
-                    translateY: letterAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [12, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <View style={styles.letterEdge} />
-            <View style={styles.letterBody}>
-              <Text style={styles.message}>{note.message}</Text>
+            <View style={styles.spacer} />
+
+            <View style={styles.closing}>
               <Text style={styles.signature}>{note.from}</Text>
               {note.voiceUri ? (
                 <View style={styles.voice}>
@@ -115,10 +120,10 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
                 </View>
               ) : null}
             </View>
-          </Animated.View>
+          </View>
+        </Animated.View>
 
-          <Text style={styles.caption}>Opened by holding this gift</Text>
-        </View>
+        <Text style={styles.caption}>Opened by holding this gift</Text>
       </ScrollView>
 
       <FooterRail style={styles.footer}>
@@ -144,44 +149,43 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   main: {
     flexGrow: 1,
-    paddingTop: space.sm,
-    paddingBottom: space.md,
-    alignItems: 'center',
+    paddingBottom: space.sm,
   },
-  column: {
+  sheet: {
+    flexGrow: 1,
+    marginHorizontal: -26,
+    backgroundColor: colors.paper,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 26,
+    paddingTop: 22,
+    paddingBottom: 26,
+  },
+  sheetTop: {
+    height: 3,
+    marginHorizontal: -26,
+    marginTop: -22,
+    marginBottom: 20,
+    backgroundColor: surface.edge,
+    opacity: 0.9,
+  },
+  measure: {
     width: '100%',
     alignSelf: 'center',
+    flexGrow: 1,
   },
   from: {
     fontFamily: fonts.sansSemi,
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.mute,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.muteSoft,
+    marginBottom: 8,
   },
-  heading: {
-    ...type.displayHero,
+  greeting: {
+    ...type.displayTitle,
     color: colors.ink,
-    marginTop: 6,
-    marginBottom: space.md,
-  },
-  letter: {
-    width: '100%',
-    flexDirection: 'row',
-    backgroundColor: colors.paper,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.hair,
-    overflow: 'hidden',
-  },
-  letterEdge: {
-    width: 4,
-    backgroundColor: surface.edge,
-  },
-  letterBody: {
-    flex: 1,
-    paddingHorizontal: 22,
-    paddingTop: 22,
-    paddingBottom: 20,
+    marginBottom: 18,
   },
   message: {
     fontFamily: fonts.sans,
@@ -189,16 +193,22 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     color: colors.ink,
   },
+  spacer: {
+    flexGrow: 1,
+    minHeight: 36,
+  },
+  closing: {
+    marginTop: 8,
+  },
   signature: {
     ...type.displaySign,
     color: colors.ink,
-    marginTop: 28,
   },
   voice: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 20,
+    marginTop: 18,
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: colors.softLine,
