@@ -9,6 +9,8 @@ import { ScanScreen } from './src/screens/ScanScreen';
 import { SealScreen } from './src/screens/SealScreen';
 import { LockedScreen } from './src/screens/LockedScreen';
 import { RevealScreen } from './src/screens/RevealScreen';
+import { DEMO_TAG_ID, ensurePreseed, saveVault } from './src/lib/storage';
+import { playClick, playUnlock } from './src/lib/sfx';
 import { colors, timing } from './src/theme';
 import { demoNote, type Note, type ScanPhase, type Screen } from './src/types';
 
@@ -46,6 +48,12 @@ export default function App() {
     }
   }, [fontsLoaded]);
 
+  useEffect(() => {
+    ensurePreseed()
+      .then((seeded) => setNote(seeded))
+      .catch(() => setNote(demoNote));
+  }, []);
+
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const clearTimers = () => {
@@ -64,8 +72,13 @@ export default function App() {
     if (scanPhase !== 'listening') return;
     setScanPhase('detecting');
     setNote(demoNote);
+    void saveVault(DEMO_TAG_ID, demoNote);
+    void playClick();
     timers.current.push(
-      setTimeout(() => setScanPhase('found'), timing.detectMs),
+      setTimeout(() => {
+        setScanPhase('found');
+        void playClick();
+      }, timing.detectMs),
       setTimeout(() => moveTo('locked'), timing.detectMs + timing.foundHoldMs),
     );
   };
@@ -78,12 +91,15 @@ export default function App() {
     };
     if (!next.recipient || !next.message || !next.from) return;
     setNote(next);
+    void saveVault(DEMO_TAG_ID, next);
+    void playClick();
     moveTo('locked');
   };
 
   const openNote = () => {
     if (opening) return;
     setOpening(true);
+    void playUnlock();
     timers.current.push(setTimeout(() => moveTo('reveal'), timing.unlockMs));
   };
 

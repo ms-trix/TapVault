@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { ArrowRight, Check, ScanLine } from 'lucide-react-native';
 import { NfcMark } from '../components/NfcMark';
 import { SoftAmbient } from '../components/SoftAmbient';
@@ -15,6 +15,8 @@ type Props = {
 
 export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
   const breathe = useRef(new Animated.Value(0)).current;
+  const spin = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -23,11 +25,51 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
         Animated.timing(breathe, { toValue: 0, duration: 1500, useNativeDriver: true }),
       ]),
     );
-    loop.start();
+    if (phase === 'listening') loop.start();
+    else {
+      loop.stop();
+      breathe.setValue(0);
+    }
     return () => loop.stop();
-  }, [breathe]);
+  }, [breathe, phase]);
+
+  useEffect(() => {
+    let spinLoop: Animated.CompositeAnimation | undefined;
+    let pulseAnim: Animated.CompositeAnimation | undefined;
+    if (phase === 'detecting') {
+      spin.setValue(0);
+      spinLoop = Animated.timing(spin, {
+        toValue: 1,
+        duration: 1500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      });
+      pulseAnim = Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 180, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 220, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 180, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 220, useNativeDriver: true }),
+      ]);
+      spinLoop.start();
+      pulseAnim.start();
+    } else {
+      spin.setValue(0);
+      pulse.setValue(0);
+    }
+    return () => {
+      spinLoop?.stop();
+      pulseAnim?.stop();
+    };
+  }, [phase, pulse, spin]);
 
   const tagScale = breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] });
+  const detectScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.92] });
+  const rotate = spin.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['-120deg', '520deg'],
+  });
+  const orbitScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.02] });
+
   const title =
     phase === 'found' ? 'Note found.' : phase === 'detecting' ? 'Reading the tag…' : 'Hold a tag\nto your phone.';
   const subtitle =
@@ -39,14 +81,37 @@ export function ScanScreen({ phase, onDemoTag, onLeaveNote }: Props) {
   const cta =
     phase === 'found' ? 'Tag found' : phase === 'detecting' ? 'Reading tag…' : 'Use demo tag';
 
+  const liveScale = phase === 'detecting' ? detectScale : phase === 'listening' ? tagScale : 1.06;
+
   return (
     <View style={styles.body}>
       <SoftAmbient />
       <View style={styles.main}>
         <View style={styles.stage}>
-          <View style={[styles.orbit, styles.orbitOuter]} />
-          <View style={[styles.orbit, styles.orbitInner]} />
-          <Animated.View style={[styles.tag, { transform: [{ rotate: '-6deg' }, { scale: phase === 'listening' ? tagScale : 1.06 }] }]}>
+          <Animated.View
+            style={[
+              styles.orbit,
+              styles.orbitOuter,
+              phase === 'detecting' && { transform: [{ scale: orbitScale }], borderColor: colors.ink },
+              phase === 'found' && { borderColor: colors.ink },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.orbit,
+              styles.orbitInner,
+              phase === 'detecting' && { transform: [{ scale: orbitScale }], borderColor: colors.ink },
+            ]}
+          />
+          {phase === 'detecting' ? (
+            <Animated.View style={[styles.trace, { transform: [{ rotate }] }]} />
+          ) : null}
+          <Animated.View
+            style={[
+              styles.tag,
+              { transform: [{ rotate: '-6deg' }, { scale: liveScale }] },
+            ]}
+          >
             <NfcMark size={34} />
             {phase === 'found' ? (
               <View style={styles.success}>
@@ -100,6 +165,15 @@ const styles = StyleSheet.create({
     height: '72%',
     borderStyle: 'dashed',
     borderColor: colors.butterDeep,
+  },
+  trace: {
+    position: 'absolute',
+    width: '98%',
+    height: '98%',
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    borderTopColor: colors.ink,
   },
   tag: {
     width: 68,

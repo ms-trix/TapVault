@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import { ArrowRight } from 'lucide-react-native';
 import { NfcMark } from '../components/NfcMark';
 import { GhostLink, KeepsakeButton } from '../components/ui';
@@ -13,21 +14,67 @@ type Props = {
 };
 
 export function LockedScreen({ note, opening, onOpen, onBack }: Props) {
+  const enter = useRef(new Animated.Value(0)).current;
+  const leave = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.timing(enter, {
+      toValue: 1,
+      duration: 700,
+      useNativeDriver: true,
+    }).start();
+  }, [enter]);
+
+  useEffect(() => {
+    if (!opening) return;
+    Animated.timing(leave, {
+      toValue: 0,
+      duration: 450,
+      useNativeDriver: true,
+    }).start();
+  }, [leave, opening]);
+
+  const emblemStyle = {
+    opacity: Animated.multiply(enter, leave),
+    transform: [
+      {
+        scale: enter.interpolate({ inputRange: [0, 1], outputRange: [0.84, opening ? 1.12 : 1] }),
+      },
+      {
+        rotate: enter.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['-8deg', '-5deg'],
+        }),
+      },
+    ],
+  };
+
+  const fadeCopy = {
+    opacity: leave,
+    transform: [
+      {
+        translateY: leave.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }),
+      },
+    ],
+  };
+
   return (
     <View style={styles.body}>
       <View style={styles.main}>
-        <View style={styles.meta}>
+        <Animated.View style={[styles.meta, fadeCopy]}>
           <Text style={styles.metaText}>
             For {note.recipient} · From {note.from}
           </Text>
-        </View>
-        <View style={styles.emblem}>
+        </Animated.View>
+        <Animated.View style={[styles.emblem, emblemStyle]}>
           <NfcMark size={54} />
-        </View>
-        <Text style={styles.title}>Still sealed.</Text>
-        <Text style={styles.teaser}>A few words are waiting here, just for {note.recipient}.</Text>
+        </Animated.View>
+        <Animated.Text style={[styles.title, fadeCopy]}>Still sealed.</Animated.Text>
+        <Animated.Text style={[styles.teaser, fadeCopy]}>
+          A few words are waiting here, just for {note.recipient}.
+        </Animated.Text>
       </View>
-      <View style={styles.footer}>
+      <Animated.View style={[styles.footer, fadeCopy]}>
         <View style={styles.readyRow}>
           <Text style={styles.readyStrong}>Ready to open</Text>
           <Text style={styles.readyMute}>For {note.recipient}</Text>
@@ -39,7 +86,7 @@ export function LockedScreen({ note, opening, onOpen, onBack }: Props) {
           trailing={<ArrowRight size={16} color={colors.cream} />}
         />
         <GhostLink label="Back to start" onPress={onBack} />
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -70,7 +117,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.butter,
     alignItems: 'center',
     justifyContent: 'center',
-    transform: [{ rotate: '-5deg' }],
   },
   title: {
     fontFamily: 'Georgia',

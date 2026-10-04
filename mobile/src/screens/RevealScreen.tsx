@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ArrowLeft, Plus } from 'lucide-react-native';
 import { SoftAmbient } from '../components/SoftAmbient';
 import { KeepsakeButton, QuietButton } from '../components/ui';
@@ -12,16 +13,38 @@ type Props = {
 };
 
 export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
+  const letter = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(letter, {
+      toValue: 1,
+      duration: 850,
+      useNativeDriver: true,
+    }).start();
+  }, [letter]);
+
   return (
     <View style={styles.body}>
       <SoftAmbient />
       <ScrollView contentContainerStyle={styles.main} style={styles.scroll}>
         <Text style={styles.kicker}>From {note.from}</Text>
         <Text style={styles.heading}>For {note.recipient}.</Text>
-        <View style={styles.letter}>
+        <Animated.View
+          style={[
+            styles.letter,
+            {
+              opacity: letter,
+              transform: [
+                {
+                  translateY: letter.interpolate({ inputRange: [0, 1], outputRange: [28, 0] }),
+                },
+              ],
+            },
+          ]}
+        >
           <Text style={styles.message}>{note.message}</Text>
           <Text style={styles.signature}>{note.from}</Text>
-        </View>
+        </Animated.View>
         <Text style={styles.caption}>Opened by holding this gift</Text>
       </ScrollView>
       <View style={styles.footer}>
