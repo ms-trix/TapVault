@@ -1,8 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { demoNote, type Note } from '../types';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { demoNote, type Note } from "../types";
 
-const STORAGE_KEY = 'tapvault-vaults-v1';
-export const DEMO_TAG_ID = 'demo-tag-001';
+const STORAGE_KEY = "tapvault-vaults-v1";
+export const DEMO_TAG_ID = "demo-tag-001";
 
 type VaultMap = Record<string, Note>;
 
@@ -39,4 +39,12 @@ export async function saveVault(tagId: string, note: Note) {
 export async function loadVault(tagId: string): Promise<Note | null> {
   const map = await readAll();
   return map[tagId] ?? null;
+}
+
+/** Restore the pitch demo note (overwrites DEMO_TAG_ID). */
+export async function resetDemoVault(): Promise<Note> {
+  const map = await readAll();
+  map[DEMO_TAG_ID] = demoNote;
+  await writeAll(map);
+  return demoNote;
 }

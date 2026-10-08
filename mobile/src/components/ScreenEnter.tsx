@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import { NATIVE_DRIVER } from '../lib/motion';
+import { NATIVE_DRIVER, useReduceMotion } from '../lib/motion';
 import { timing } from '../theme';
 
 /** Quiet enter for screen bodies — opacity + short rise, once. */
@@ -15,17 +15,18 @@ export function ScreenEnter({
   delay?: number;
 }) {
   const progress = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
     progress.setValue(0);
     Animated.timing(progress, {
       toValue: 1,
-      duration: timing.enterMs,
-      delay,
+      duration: reduceMotion ? 0 : timing.enterMs,
+      delay: reduceMotion ? 0 : delay,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: NATIVE_DRIVER,
     }).start();
-  }, [delay, progress]);
+  }, [delay, progress, reduceMotion]);
 
   return (
     <Animated.View
@@ -38,7 +39,7 @@ export function ScreenEnter({
             {
               translateY: progress.interpolate({
                 inputRange: [0, 1],
-                outputRange: [10, 0],
+                outputRange: [reduceMotion ? 0 : 10, 0],
               }),
             },
           ],

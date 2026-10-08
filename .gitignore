@@ -42,6 +42,13 @@ dist-ssr
 # Former Lovable tooling (not used)
 .lovable/
 
+# Brag video outputs (local renders; keep out of git)
+brag-output/
+brag-output-*/
+
+# Local mobile backups
+mobile/.backup*/
+
 # Expo / mobile
 mobile/node_modules/
 mobile/.expo/

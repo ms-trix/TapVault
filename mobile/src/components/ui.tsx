@@ -1,13 +1,6 @@
-import type { ReactNode } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  type TextInputProps,
-} from 'react-native';
-import { colors, fonts, radii, type } from '../theme';
+import type { ReactNode } from "react";
+import { Pressable, StyleSheet, Text, View, TextInput, type TextInputProps } from "react-native";
+import { colors, fonts, radii, type } from "../theme";
 
 export function KeepsakeButton({
   label,
@@ -102,15 +95,19 @@ export function AppHeader({
   mark,
   onHome,
   onNewNote,
+  onMarkLongPress,
 }: {
   mark: ReactNode;
   onHome: () => void;
-  onNewNote: () => void;
+  onNewNote?: () => void;
+  onMarkLongPress?: () => void;
 }) {
   return (
     <View style={styles.header}>
       <Pressable
         onPress={onHome}
+        onLongPress={onMarkLongPress}
+        delayLongPress={450}
         style={({ pressed }) => [styles.brandRow, pressed && { opacity: 0.85 }]}
         accessibilityRole="button"
         accessibilityLabel="TapVault home"
@@ -121,14 +118,18 @@ export function AppHeader({
           <Text style={styles.brandSub}>touch to open</Text>
         </View>
       </Pressable>
-      <Pressable
-        onPress={onNewNote}
-        accessibilityRole="button"
-        accessibilityLabel="Leave a new note"
-        style={({ pressed }) => [styles.plusHit, pressed && styles.plusPressed]}
-      >
-        <Text style={styles.plus}>+</Text>
-      </Pressable>
+      {onNewNote ? (
+        <Pressable
+          onPress={onNewNote}
+          accessibilityRole="button"
+          accessibilityLabel="Leave a new note"
+          style={({ pressed }) => [styles.plusHit, pressed && styles.plusPressed]}
+        >
+          <Text style={styles.plus}>+</Text>
+        </Pressable>
+      ) : (
+        <View style={styles.plusSpacer} />
+      )}
     </View>
   );
 }
@@ -141,9 +142,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radii.control,
     paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 10,
   },
   keepsakePressed: {
@@ -153,8 +154,8 @@ const styles = StyleSheet.create({
   keepsakeDisabled: {
     opacity: 0.42,
   },
-  fullWidth: { width: '100%' },
-  trailing: { marginLeft: 'auto' },
+  fullWidth: { width: "100%" },
+  trailing: { marginLeft: "auto" },
   keepsakeLabel: {
     ...type.ui,
     color: colors.cream,
@@ -167,9 +168,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radii.control,
     paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     flex: 1,
   },
@@ -182,8 +183,8 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   ghostLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     paddingVertical: 8,
   },
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sansSemi,
     fontSize: 12,
     color: colors.mute,
-    textDecorationLine: 'underline',
+    textDecorationLine: "underline",
     textDecorationColor: colors.butterDeep,
   },
   field: { gap: 8 },
@@ -214,18 +215,18 @@ const styles = StyleSheet.create({
   },
   textarea: {
     minHeight: 150,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
     paddingTop: 14,
   },
   header: {
     height: 78,
     paddingHorizontal: 26,
     paddingTop: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   brandMark: {
     width: 36,
     height: 36,
@@ -233,9 +234,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.butter,
-    alignItems: 'center',
-    justifyContent: 'center',
-    transform: [{ rotate: '-5deg' }],
+    alignItems: "center",
+    justifyContent: "center",
+    transform: [{ rotate: "-5deg" }],
   },
   brandName: {
     ...type.brand,
@@ -255,8 +256,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.paper,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   plusPressed: {
     transform: [{ scale: 0.96 }],
@@ -268,5 +269,9 @@ const styles = StyleSheet.create({
     color: colors.ink,
     lineHeight: 26,
     marginTop: -1,
+  },
+  plusSpacer: {
+    width: 40,
+    height: 40,
   },
 });

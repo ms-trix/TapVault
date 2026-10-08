@@ -1,5 +1,9 @@
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
+
+const clickAsset = require('../../assets/sfx/click.wav');
+const unlockAsset = require('../../assets/sfx/unlock.wav');
 
 type AudioContextType = {
   state: string;
@@ -23,6 +27,8 @@ type AudioContextType = {
 };
 
 let sharedCtx: AudioContextType | null = null;
+let nativeReady = false;
+let activePlayer: AudioPlayer | null = null;
 
 function getCtx(): AudioContextType | null {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
@@ -92,9 +98,38 @@ async function haptic(style: 'light' | 'medium' | 'success') {
   }
 }
 
+async function ensureNativeAudio() {
+  if (nativeReady || Platform.OS === 'web') return;
+  await setAudioModeAsync({
+    playsInSilentMode: true,
+    allowsRecording: false,
+  });
+  nativeReady = true;
+}
+
+async function playNative(asset: number) {
+  await ensureNativeAudio();
+  if (activePlayer) {
+    try {
+      activePlayer.pause();
+      activePlayer.remove();
+    } catch {
+      /* ignore */
+    }
+    activePlayer = null;
+  }
+  const next = createAudioPlayer(asset, { updateInterval: 500, keepAudioSessionActive: true });
+  activePlayer = next;
+  next.play();
+}
+
 /** Short tactile click when a tag is detected. */
 export async function playClick() {
   void haptic('light');
+  if (Platform.OS !== 'web') {
+    await playNative(clickAsset);
+    return;
+  }
   const ctx = getCtx();
   if (!ctx) return;
   await resume(ctx);
@@ -106,6 +141,10 @@ export async function playClick() {
 /** Soft “safe unlock” for opening a sealed note. */
 export async function playUnlock() {
   void haptic('success');
+  if (Platform.OS !== 'web') {
+    await playNative(unlockAsset);
+    return;
+  }
   const ctx = getCtx();
   if (!ctx) return;
   await resume(ctx);

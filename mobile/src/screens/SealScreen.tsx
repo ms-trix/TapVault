@@ -1,17 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ArrowLeft, ArrowRight } from 'lucide-react-native';
-import { FooterRail } from '../components/PaperSurface';
-import { ScreenEnter } from '../components/ScreenEnter';
-import { VoiceRow } from '../components/VoiceRow';
-import { Field, GhostLink, KeepsakeButton } from '../components/ui';
+import { useEffect, useRef, useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ArrowLeft, ArrowRight } from "lucide-react-native";
+import { FooterRail } from "../components/PaperSurface";
+import { PhotoRow } from "../components/PhotoRow";
+import { ScreenEnter } from "../components/ScreenEnter";
+import { UnlockAtRow } from "../components/UnlockAtRow";
+import { VoiceRow } from "../components/VoiceRow";
+import { Field, GhostLink, KeepsakeButton } from "../components/ui";
 import {
   MAX_VOICE_SEC,
   cancelVoiceRecording,
   startVoiceRecording,
   stopVoiceRecording,
-} from '../lib/voice';
-import { colors, fonts, space, type } from '../theme';
+} from "../lib/voice";
+import { colors, fonts, space, type } from "../theme";
+import type { UnlockDraft } from "../types";
 
 type Props = {
   recipient: string;
@@ -19,12 +22,16 @@ type Props = {
   from: string;
   voiceUri?: string;
   voiceDurationSec?: number;
+  photoUri?: string;
+  unlockDraft: UnlockDraft;
   onChangeRecipient: (v: string) => void;
   onChangeMessage: (v: string) => void;
   onChangeFrom: (v: string) => void;
   onChangeVoice: (uri?: string, durationSec?: number) => void;
+  onChangePhoto: (uri?: string) => void;
+  onChangeUnlock: (draft: UnlockDraft) => void;
   onBack: () => void;
-  onSeal: () => void;
+  onContinue: () => void;
 };
 
 export function SealScreen({
@@ -33,18 +40,22 @@ export function SealScreen({
   from,
   voiceUri,
   voiceDurationSec,
+  photoUri,
+  unlockDraft,
   onChangeRecipient,
   onChangeMessage,
   onChangeFrom,
   onChangeVoice,
+  onChangePhoto,
+  onChangeUnlock,
   onBack,
-  onSeal,
+  onContinue,
 }: Props) {
   const [recording, setRecording] = useState(false);
   const [recordSec, setRecordSec] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const tick = useRef<ReturnType<typeof setInterval> | null>(null);
-  const canSeal = Boolean(recipient.trim() && message.trim() && from.trim());
+  const canContinue = Boolean(recipient.trim() && message.trim() && from.trim());
 
   useEffect(
     () => () => {
@@ -69,7 +80,7 @@ export function SealScreen({
         const result = await stopVoiceRecording();
         onChangeVoice(result.uri, result.durationSec);
       } catch {
-        setError('Couldn’t save the recording. Try again.');
+        setError("Couldn’t save the recording. Try again.");
       }
       setRecording(false);
       setRecordSec(0);
@@ -91,7 +102,7 @@ export function SealScreen({
               const result = await stopVoiceRecording();
               onChangeVoice(result.uri, result.durationSec);
             } catch {
-              setError('Recording stopped at the 30s limit.');
+              setError("Recording stopped at the 30s limit.");
             }
             setRecording(false);
             setRecordSec(0);
@@ -99,7 +110,7 @@ export function SealScreen({
         }
       }, 200);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Couldn’t reach the microphone.');
+      setError(e instanceof Error ? e.message : "Couldn’t reach the microphone.");
       setRecording(false);
     }
   };
@@ -147,14 +158,16 @@ export function SealScreen({
               onToggle={() => void toggleRecord()}
               onClear={() => onChangeVoice(undefined, undefined)}
             />
+            <PhotoRow photoUri={photoUri} disabled={recording} onChange={onChangePhoto} />
+            <UnlockAtRow value={unlockDraft} disabled={recording} onChange={onChangeUnlock} />
           </View>
         </ScrollView>
         <FooterRail style={styles.footer}>
           <Text style={styles.hint}>Your note stays on this device for the demo.</Text>
           <KeepsakeButton
-            label="Seal this note"
-            onPress={onSeal}
-            disabled={!canSeal || recording}
+            label="Continue to seal"
+            onPress={onContinue}
+            disabled={!canContinue || recording}
             trailing={<ArrowRight size={16} color={colors.cream} />}
           />
         </FooterRail>

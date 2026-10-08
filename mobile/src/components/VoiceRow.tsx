@@ -147,11 +147,13 @@ const styles = StyleSheet.create({
   },
   btn: {
     minHeight: 40,
+    minWidth: 98,
     paddingHorizontal: 14,
     borderRadius: radii.control,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 7,
   },
   btnPressed: {

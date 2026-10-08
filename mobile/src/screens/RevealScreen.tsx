@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ArrowLeft, Plus, Square } from 'lucide-react-native';
-import { KeepsakeButton, QuietButton } from '../components/ui';
-import { NATIVE_DRIVER } from '../lib/motion';
-import { formatDuration, playVoice, stopVoicePlayback } from '../lib/voice';
-import { colors, fonts, radii, space, type } from '../theme';
-import type { Note } from '../types';
+import { useEffect, useRef, useState } from "react";
+import { Animated, Easing, Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ArrowLeft, Plus } from "lucide-react-native";
+import { KeepsakeButton, QuietButton } from "../components/ui";
+import { VoicePlayRow } from "../components/VoicePlayRow";
+import { resolveMediaUri } from "../lib/media";
+import { NATIVE_DRIVER } from "../lib/motion";
+import { playVoice, stopVoicePlayback } from "../lib/voice";
+import { colors, fonts, radii, space, type } from "../theme";
+import type { Note } from "../types";
 
 type Props = {
   note: Note;
@@ -34,8 +36,11 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
     [],
   );
 
+  const photoUri = resolveMediaUri(note.photoUri);
+  const voiceUri = resolveMediaUri(note.voiceUri);
+
   const toggleVoice = async () => {
-    if (!note.voiceUri) return;
+    if (!voiceUri) return;
     if (playing) {
       await stopVoicePlayback();
       setPlaying(false);
@@ -43,7 +48,7 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
     }
     setPlaying(true);
     try {
-      await playVoice(note.voiceUri, () => setPlaying(false));
+      await playVoice(voiceUri, () => setPlaying(false));
     } catch {
       setPlaying(false);
     }
@@ -70,27 +75,17 @@ export function RevealScreen({ note, onStartAgain, onNewNote }: Props) {
             },
           ]}
         >
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="cover" />
+          ) : null}
           <Text style={styles.message}>{note.message}</Text>
           <Text style={styles.signature}>{note.from}</Text>
-          {note.voiceUri ? (
-            <View style={styles.voice}>
-              <Pressable
-                onPress={() => void toggleVoice()}
-                style={({ pressed }) => [styles.play, pressed && styles.playPressed]}
-                accessibilityRole="button"
-                accessibilityLabel={playing ? 'Stop voice note' : 'Play voice note'}
-              >
-                {playing ? (
-                  <Square size={14} color={colors.cream} />
-                ) : (
-                  <Text style={styles.playTriangle}>▶</Text>
-                )}
-              </Pressable>
-              <View>
-                <Text style={styles.voiceTitle}>Voice note</Text>
-                <Text style={styles.voiceMeta}>{formatDuration(note.voiceDurationSec ?? 0)}</Text>
-              </View>
-            </View>
+          {voiceUri ? (
+            <VoicePlayRow
+              durationSec={note.voiceDurationSec}
+              playing={playing}
+              onToggle={() => void toggleVoice()}
+            />
           ) : null}
         </Animated.View>
         <Text style={styles.caption}>Opened by holding this gift</Text>
@@ -137,6 +132,13 @@ const styles = StyleSheet.create({
     minHeight: 280,
     borderRadius: radii.hair,
   },
+  photo: {
+    width: "100%",
+    height: 200,
+    borderRadius: radii.hair,
+    marginBottom: 20,
+    backgroundColor: colors.border,
+  },
   message: {
     ...type.bodyLarge,
     color: colors.ink,
@@ -146,46 +148,8 @@ const styles = StyleSheet.create({
     color: colors.ink,
     marginTop: 40,
   },
-  voice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 28,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.softLine,
-  },
-  play: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playPressed: {
-    transform: [{ scale: 0.96 }],
-    opacity: 0.92,
-  },
-  playTriangle: {
-    color: colors.cream,
-    fontSize: 14,
-    marginLeft: 2,
-    fontFamily: fonts.sans,
-  },
-  voiceTitle: {
-    fontFamily: fonts.sansSemi,
-    fontSize: 13,
-    color: colors.ink,
-  },
-  voiceMeta: {
-    fontFamily: fonts.sans,
-    fontSize: 11,
-    color: colors.muteSoft,
-    marginTop: 2,
-  },
   caption: {
-    textAlign: 'center',
+    textAlign: "center",
     fontFamily: fonts.sans,
     color: colors.muteSoft,
     fontSize: 11,
@@ -196,7 +160,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
     paddingTop: space.md,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   footerBtn: { flex: 1 },

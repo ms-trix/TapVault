@@ -25,7 +25,9 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "permissions": ["RECORD_AUDIO"],
+      "permissions": [
+        "RECORD_AUDIO"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -35,11 +37,19 @@
       "expo-font",
       "expo-splash-screen",
       [
-        "expo-av",
+        "expo-audio",
         {
           "microphonePermission": "TapVault records an optional short voice note for your sealed message."
         }
-      ]
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "TapVault attaches an optional photo to your sealed note.",
+          "cameraPermission": "TapVault uses the camera for an optional photo on your sealed note."
+        }
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }
